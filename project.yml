@@ -5,6 +5,39 @@ options:
     macOS: "14.0"
   createIntermediateGroups: true
   groupSortPosition: top
+  schemePathPrefix: ""
+  generateEmptyDirectories: true
+
+schemes:
+  WixPulse:
+    build:
+      targets:
+        WixPulse: all
+        OrdersWidget: all
+        AnalyticsWidget: all
+    run:
+      config: Debug
+      executable: WixPulse
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+  OrdersWidgetExtension:
+    build:
+      targets:
+        OrdersWidget: all
+    run:
+      config: Debug
+  AnalyticsWidgetExtension:
+    build:
+      targets:
+        AnalyticsWidget: all
+    run:
+      config: Debug
 
 settings:
   base:
