@@ -6,6 +6,32 @@ A native macOS app and desktop widgets that turn a [Wix](https://www.wix.com/) s
 
 > Built originally to run a small 3D-printing fulfillment workflow for a Wix shop — the operator opens the laptop, glances at the desktop widget, prints the next item, marks it done, and the queue updates everywhere instantly.
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/01-widgets.png" alt="WixPulse widgets on the macOS desktop" width="100%" />
+  <em>Recent Orders and WIX Analytics widgets pinned to the desktop, alongside macOS native widgets.</em>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="screenshots/02-orders.png" alt="Orders view — production queue with status filters" /></td>
+    <td width="50%"><img src="screenshots/03-analytics.png" alt="Analytics view — revenue hero card and 7-day chart" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Orders</b> — production queue with To-print / Printed / Unfulfilled / Unpaid filters and oldest-first sorting.</td>
+    <td align="center"><b>Analytics</b> — today's revenue hero, 30-day metrics, and a 7-day Swift Charts breakdown.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="screenshots/04-settings.png" alt="Settings view — API key, refresh interval, product filter" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><b>Settings</b> — API key stored in Keychain, refresh interval, and a product filter that scopes both app and widgets to the SKUs you care about.</td>
+  </tr>
+</table>
+
+> The screenshots above are rendered with seed data from the [`screenshots-mock`](https://github.com/krzysztofkotlowski/wix-pulse/tree/screenshots-mock) branch (a fictional tabletop-miniatures studio). The `main` branch hits the real Wix REST API.
+
 ## Features
 
 ### Production queue (the main loop)
