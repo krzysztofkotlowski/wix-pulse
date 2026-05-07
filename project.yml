@@ -59,11 +59,6 @@ targets:
     platform: macOS
     sources:
       - path: Sources/WixPulseApp
-        excludes:
-          - "AppIcon.icon"
-      - path: Sources/WixPulseApp/AppIcon.icon
-        type: file
-        buildPhase: resources
     dependencies:
       - package: WixPulseCore
       - target: OrdersWidget
