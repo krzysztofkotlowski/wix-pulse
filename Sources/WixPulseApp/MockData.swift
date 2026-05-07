@@ -4,10 +4,11 @@ import WixPulseCore
 /// Mock seed data for portfolio screenshots. Only compiled into the
 /// `screenshots-mock` branch — main branch never uses this.
 ///
-/// Produces 18 orders spanning today through 8 days ago with realistic
-/// variety: different products, colors, sizes, payment statuses, fulfillment
-/// states, line-item counts, addresses, notes, and a sprinkling of orders
-/// already marked printed so the queue/printed/all filters all have content.
+/// Models a fictional specialty coffee roaster ("Northern Ridge Coffee")
+/// with single-origin beans, signature blends, and an espresso line.
+/// Produces 18 orders across 8 days with realistic variety in roast
+/// levels, grind types, weights, customers from US/UK/DE/FR, and a few
+/// orders pre-marked as printed for the queue/printed/all filters.
 enum MockData {
 
     static let snapshot: CachedSnapshot = {
@@ -20,204 +21,209 @@ enum MockData {
 
         let orders: [WixOrder] = [
             // Today
-            order(id: "ord-1", number: "10172", date: daysAgo(0, hour: 14, minute: 22),
+            order(id: "ord-1", number: "20247", date: daysAgo(0, hour: 14, minute: 22),
                   paid: .paid, fulfilled: .notFulfilled,
-                  customer: ("Anna Kowalska", "anna.kowalska@gmail.com", "+48 601 234 567"),
+                  customer: ("Sarah Chen", "sarah.chen@gmail.com", "+1 415 555 0142"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Lava Red", qty: 1,
-                         sku: "EQ-EL-LAVA", unit: 690,
-                         attrs: [("Rozmiar", "full"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh"), ("Ilość wejść", "1")]),
+                    item(name: "Single Origin Ethiopia Yirgacheffe LIGHT ROAST",
+                         qty: 2, sku: "SO-ETH-YIRG", unit: 22,
+                         attrs: [("Weight", "12oz"), ("Grind", "Whole bean"), ("Roast Level", "Light")]),
                   ],
-                  total: 690, addr: krakowAddress(name: "Anna Kowalska"),
-                  note: "Proszę o dyskretne pakowanie, prezent dla córki"),
+                  total: 44, addr: usAddress("Sarah Chen", "1247 Castro St", "San Francisco", "CA", "94114")),
 
-            order(id: "ord-2", number: "10171", date: daysAgo(0, hour: 11, minute: 5),
+            order(id: "ord-2", number: "20246", date: daysAgo(0, hour: 11, minute: 5),
                   paid: .paid, fulfilled: .notFulfilled,
-                  customer: ("Marek Nowak", "marek.nowak@wp.pl", "+48 605 112 998"),
+                  customer: ("James Whitmore", "j.whitmore@protonmail.com", "+44 20 7946 0119"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia CLASSIC EQUINEINHALER Baby Blue", qty: 2,
-                         sku: "EQ-CL-BABY", unit: 211,
-                         attrs: [("Rozmiar", "cob"), ("Kompatybilny Inhalator", "FLAEM Wi.NebGo")]),
+                    item(name: "Signature House Blend MEDIUM ROAST",
+                         qty: 1, sku: "BL-HOUSE-MED", unit: 18,
+                         attrs: [("Weight", "12oz"), ("Grind", "V60 / Pour-over")]),
+                    item(name: "Espresso Forte Blend DARK ROAST",
+                         qty: 1, sku: "BL-ESP-DARK", unit: 20,
+                         attrs: [("Weight", "12oz"), ("Grind", "Espresso fine")]),
                   ],
-                  total: 422, addr: warsawAddress(name: "Marek Nowak")),
+                  total: 38, addr: ukAddress("James Whitmore", "47 Goodge Street, Flat 3", "London", "W1T 1TB")),
 
-            order(id: "ord-3", number: "10170", date: daysAgo(0, hour: 9, minute: 41),
+            order(id: "ord-3", number: "20245", date: daysAgo(0, hour: 9, minute: 41),
                   paid: .paid, fulfilled: .notFulfilled,
-                  customer: ("Joanna Wiśniewska", "joanna.w@icloud.com", "+48 502 887 332"),
+                  customer: ("Maria González", "maria.g@icloud.com", "+34 91 555 8842"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Glacial Blue", qty: 1,
-                         sku: "EQ-EL-GLAC", unit: 690,
-                         attrs: [("Rozmiar", "pony"), ("Kompatybilny Inhalator", "FLAEM Wi.NebGo (opcja z saszetką na szyję)"), ("Ilość wejść", "1")]),
-                    item(name: "Pas zad pomoc do lonżowania", qty: 1,
-                         sku: "ACC-PAS-01", unit: 130,
-                         attrs: []),
+                    item(name: "Single Origin Colombia Huila MEDIUM ROAST",
+                         qty: 3, sku: "SO-COL-HUIL", unit: 19,
+                         attrs: [("Weight", "1lb"), ("Grind", "Whole bean"), ("Roast Level", "Medium")]),
                   ],
-                  total: 820, addr: gdanskAddress(name: "Joanna Wiśniewska"),
-                  note: "Proszę zapakować osobno"),
+                  total: 57, addr: euAddress("Maria González", "Calle de Serrano 88", "Madrid", "28006", "Spain"),
+                  note: "Please ship via standard post — no expedited"),
 
             // Yesterday
-            order(id: "ord-4", number: "10169", date: daysAgo(1, hour: 19, minute: 47),
+            order(id: "ord-4", number: "20244", date: daysAgo(1, hour: 19, minute: 47),
                   paid: .paid, fulfilled: .notFulfilled,
-                  customer: ("Piotr Lewandowski", "p.lewandowski@gmail.com", "+48 698 441 220"),
+                  customer: ("David Klein", "d.klein@gmx.de", "+49 30 5550 1187"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia CLASSIC EQUINEINHALER Lovely Violet", qty: 1,
-                         sku: "EQ-CL-VIO", unit: 475,
-                         attrs: [("Rozmiar", "full"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh"), ("Ilość wejść", "1")]),
+                    item(name: "Decaf Brazilian Cerrado MEDIUM ROAST",
+                         qty: 1, sku: "DC-BRA-CER", unit: 24,
+                         attrs: [("Weight", "12oz"), ("Grind", "French press"), ("Roast Level", "Medium")]),
                   ],
-                  total: 475, addr: poznanAddress(name: "Piotr Lewandowski")),
+                  total: 24, addr: euAddress("David Klein", "Friedrichstraße 112", "Berlin", "10117", "Germany")),
 
-            order(id: "ord-5", number: "10168", date: daysAgo(1, hour: 14, minute: 10),
+            order(id: "ord-5", number: "20243", date: daysAgo(1, hour: 14, minute: 10),
                   paid: .paid, fulfilled: .notFulfilled,
-                  customer: ("Karolina Zielińska", "kasienka.zielinska@gmail.com", "+48 535 102 887"),
+                  customer: ("Emily Park", "emily.park@gmail.com", "+1 312 555 0288"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Glacial Blue", qty: 1,
-                         sku: "EQ-EL-GLAC", unit: 690,
-                         attrs: [("Rozmiar", "cob"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh"), ("Ilość wejść", "1")]),
+                    item(name: "Cold Brew Concentrate Pack DARK ROAST",
+                         qty: 2, sku: "CB-PACK-DK", unit: 28,
+                         attrs: [("Weight", "1lb"), ("Grind", "Coarse"), ("Roast Level", "Dark")]),
+                    item(name: "Ceramic V60 Dripper",
+                         qty: 1, sku: "ACC-V60-WHT", unit: 32,
+                         attrs: [("Color", "Matte White"), ("Size", "02")]),
                   ],
-                  total: 690, addr: wroclawAddress(name: "Karolina Zielińska")),
+                  total: 88, addr: usAddress("Emily Park", "2204 N Lincoln Ave", "Chicago", "IL", "60614")),
 
-            order(id: "ord-6", number: "10167", date: daysAgo(1, hour: 8, minute: 32),
+            order(id: "ord-6", number: "20242", date: daysAgo(1, hour: 8, minute: 32),
                   paid: .notPaid, fulfilled: .notFulfilled,
-                  customer: ("Tomasz Jankowski", "tomek.j@interia.pl", "+48 511 778 921"),
+                  customer: ("Thomas O'Brien", "t.obrien@gmail.com", "+1 617 555 0993"),
                   items: [
-                    item(name: "Inhalator FLAEM Nebulair+", qty: 1,
-                         sku: "INH-FL-NEB", unit: 1091,
-                         attrs: []),
+                    item(name: "Subscription · Roaster's Choice 3-Month",
+                         qty: 1, sku: "SUB-RC-3MO", unit: 165,
+                         attrs: [("Tier", "Roaster's Choice"), ("Frequency", "Monthly · 3 months"), ("Bag size", "12oz")]),
                   ],
-                  total: 1091, addr: warsawAddress(name: "Tomasz Jankowski")),
+                  total: 165, addr: usAddress("Thomas O'Brien", "184 Beacon Street", "Boston", "MA", "02116")),
 
-            // 2-3 days ago — already marked printed by operator
-            order(id: "ord-7", number: "10166", date: daysAgo(2, hour: 16, minute: 18),
+            // 2-3 days ago — already marked printed
+            order(id: "ord-7", number: "20241", date: daysAgo(2, hour: 16, minute: 18),
                   paid: .paid, fulfilled: .notFulfilled,
-                  customer: ("Magdalena Szymańska", "m.szymanska@onet.pl", "+48 600 887 112"),
+                  customer: ("Sophie Martin", "sophie.martin@orange.fr", "+33 1 4555 7821"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Lava Red", qty: 1,
-                         sku: "EQ-EL-LAVA", unit: 690,
-                         attrs: [("Rozmiar", "pony"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh"), ("Ilość wejść", "1")]),
+                    item(name: "Signature House Blend MEDIUM ROAST",
+                         qty: 2, sku: "BL-HOUSE-MED", unit: 18,
+                         attrs: [("Weight", "12oz"), ("Grind", "Aeropress")]),
                   ],
-                  total: 690, addr: krakowAddress(name: "Magdalena Szymańska")),
+                  total: 36, addr: euAddress("Sophie Martin", "12 rue de Rivoli", "Paris", "75004", "France")),
 
-            order(id: "ord-8", number: "10165", date: daysAgo(2, hour: 10, minute: 4),
+            order(id: "ord-8", number: "20240", date: daysAgo(2, hour: 10, minute: 4),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Jakub Wójcik", "jakub.wojcik@gmail.com", "+48 502 110 887"),
+                  customer: ("Marcus Williams", "m.williams@yahoo.com", "+1 213 555 4471"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia CLASSIC EQUINEINHALER Baby Blue", qty: 1,
-                         sku: "EQ-CL-BABY", unit: 422,
-                         attrs: [("Rozmiar", "full"), ("Kompatybilny Inhalator", "FLAEM Wi.NebGo")]),
+                    item(name: "Single Origin Kenya Nyeri LIGHT ROAST",
+                         qty: 1, sku: "SO-KEN-NYR", unit: 26,
+                         attrs: [("Weight", "12oz"), ("Grind", "Whole bean"), ("Roast Level", "Light")]),
                   ],
-                  total: 422, addr: poznanAddress(name: "Jakub Wójcik")),
+                  total: 26, addr: usAddress("Marcus Williams", "8420 Sunset Blvd", "Los Angeles", "CA", "90069")),
 
-            order(id: "ord-9", number: "10164", date: daysAgo(3, hour: 18, minute: 51),
+            order(id: "ord-9", number: "20239", date: daysAgo(3, hour: 18, minute: 51),
                   paid: .paid, fulfilled: .notFulfilled,
-                  customer: ("Aleksandra Kamińska", "ola.kaminska@wp.pl", "+48 605 332 778"),
+                  customer: ("Laura Schneider", "l.schneider@web.de", "+49 89 5550 2244"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Lovely Violet", qty: 2,
-                         sku: "EQ-EL-VIO", unit: 690,
-                         attrs: [("Rozmiar", "full"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh"), ("Ilość wejść", "1")]),
+                    item(name: "Espresso Forte Blend DARK ROAST",
+                         qty: 4, sku: "BL-ESP-DARK", unit: 20,
+                         attrs: [("Weight", "12oz"), ("Grind", "Espresso fine")]),
                   ],
-                  total: 1380, addr: warsawAddress(name: "Aleksandra Kamińska"),
-                  note: "Pilne — koń startuje w zawodach w przyszłym tygodniu"),
+                  total: 80, addr: euAddress("Laura Schneider", "Maximilianstraße 24", "München", "80539", "Germany"),
+                  note: "Office order — please send invoice to billing@laurasdesign.de"),
 
-            order(id: "ord-10", number: "10163", date: daysAgo(3, hour: 12, minute: 25),
+            order(id: "ord-10", number: "20238", date: daysAgo(3, hour: 12, minute: 25),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Michał Dąbrowski", "michal.dabrowski@gmail.com", "+48 698 221 005"),
+                  customer: ("Olivia Foster", "olivia.foster@gmail.com", "+1 503 555 6677"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia CLASSIC EQUINEINHALER Glacial Blue", qty: 1,
-                         sku: "EQ-CL-GLAC", unit: 422,
-                         attrs: [("Rozmiar", "cob"), ("Kompatybilny Inhalator", "FLAEM Wi.NebGo")]),
+                    item(name: "Signature House Blend MEDIUM ROAST",
+                         qty: 1, sku: "BL-HOUSE-MED", unit: 18,
+                         attrs: [("Weight", "12oz"), ("Grind", "Drip")]),
                   ],
-                  total: 422, addr: wroclawAddress(name: "Michał Dąbrowski")),
+                  total: 18, addr: usAddress("Olivia Foster", "1822 NW Glisan St", "Portland", "OR", "97209")),
 
             // 4-5 days ago
-            order(id: "ord-11", number: "10162", date: daysAgo(4, hour: 21, minute: 12),
+            order(id: "ord-11", number: "20237", date: daysAgo(4, hour: 21, minute: 12),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Natalia Pawlak", "natalia.pawlak@gmail.com", "+48 535 998 110"),
+                  customer: ("Daniel Reyes", "d.reyes@gmail.com", "+1 786 555 1100"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Baby Blue", qty: 1,
-                         sku: "EQ-EL-BABY", unit: 690,
-                         attrs: [("Rozmiar", "pony"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh"), ("Ilość wejść", "1")]),
+                    item(name: "Single Origin Ethiopia Yirgacheffe LIGHT ROAST",
+                         qty: 2, sku: "SO-ETH-YIRG", unit: 22,
+                         attrs: [("Weight", "12oz"), ("Grind", "V60 / Pour-over"), ("Roast Level", "Light")]),
                   ],
-                  total: 690, addr: gdanskAddress(name: "Natalia Pawlak")),
+                  total: 44, addr: usAddress("Daniel Reyes", "1500 Brickell Ave", "Miami", "FL", "33129")),
 
-            order(id: "ord-12", number: "10161", date: daysAgo(4, hour: 15, minute: 47),
+            order(id: "ord-12", number: "20236", date: daysAgo(4, hour: 15, minute: 47),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Krzysztof Wojciechowski", "krzysiek.w@interia.pl", "+48 600 445 887"),
+                  customer: ("Charlotte Adams", "charlotte.adams@btinternet.com", "+44 161 555 7890"),
                   items: [
-                    item(name: "Pas zad pomoc do lonżowania", qty: 1,
-                         sku: "ACC-PAS-01", unit: 66,
-                         attrs: []),
+                    item(name: "Reusable Cotton Filter (Pack of 2)",
+                         qty: 2, sku: "ACC-FILT-CT", unit: 14,
+                         attrs: [("Size", "Medium")]),
                   ],
-                  total: 66, addr: krakowAddress(name: "Krzysztof Wojciechowski")),
+                  total: 28, addr: ukAddress("Charlotte Adams", "32 Deansgate", "Manchester", "M3 2RH")),
 
-            order(id: "ord-13", number: "10160", date: daysAgo(5, hour: 10, minute: 33),
+            order(id: "ord-13", number: "20235", date: daysAgo(5, hour: 10, minute: 33),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Ewa Krawczyk", "ewa.krawczyk@onet.pl", "+48 605 778 110"),
+                  customer: ("Henry Thompson", "h.thompson@gmail.com", "+1 720 555 3344"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Glacial Blue", qty: 1,
-                         sku: "EQ-EL-GLAC", unit: 621,
-                         attrs: [("Rozmiar", "full"), ("Kompatybilny Inhalator", "FLAEM Wi.NebGo"), ("Ilość wejść", "1")]),
+                    item(name: "Single Origin Colombia Huila MEDIUM ROAST",
+                         qty: 1, sku: "SO-COL-HUIL", unit: 19,
+                         attrs: [("Weight", "12oz"), ("Grind", "Whole bean"), ("Roast Level", "Medium")]),
+                    item(name: "Hand-thrown Espresso Cup Set",
+                         qty: 1, sku: "MUG-ESP-SET", unit: 48,
+                         attrs: [("Color", "Speckled cream"), ("Size", "Set of 2")]),
                   ],
-                  total: 621, addr: poznanAddress(name: "Ewa Krawczyk")),
+                  total: 67, addr: usAddress("Henry Thompson", "1500 Pearl Street", "Boulder", "CO", "80302")),
 
-            order(id: "ord-14", number: "10159", date: daysAgo(5, hour: 8, minute: 18),
+            order(id: "ord-14", number: "20234", date: daysAgo(5, hour: 8, minute: 18),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Robert Mazur", "robert.mazur@gmail.com", "+48 502 998 221"),
+                  customer: ("Anaïs Dubois", "anais.dubois@laposte.net", "+33 4 9255 0782"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia CLASSIC EQUINEINHALER Lovely Violet", qty: 1,
-                         sku: "EQ-CL-VIO", unit: 475,
-                         attrs: [("Rozmiar", "cob"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh")]),
+                    item(name: "Decaf Brazilian Cerrado MEDIUM ROAST",
+                         qty: 1, sku: "DC-BRA-CER", unit: 24,
+                         attrs: [("Weight", "12oz"), ("Grind", "French press"), ("Roast Level", "Medium")]),
                   ],
-                  total: 475, addr: warsawAddress(name: "Robert Mazur")),
+                  total: 24, addr: euAddress("Anaïs Dubois", "47 Cours Mirabeau", "Aix-en-Provence", "13100", "France")),
 
             // 6-8 days ago
-            order(id: "ord-15", number: "10158", date: daysAgo(6, hour: 17, minute: 22),
+            order(id: "ord-15", number: "20233", date: daysAgo(6, hour: 17, minute: 22),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Agnieszka Kaczmarek", "agnieszka.k@wp.pl", "+48 698 110 445"),
+                  customer: ("Robert Patel", "robert.patel@outlook.com", "+1 425 555 8821"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Lava Red", qty: 1,
-                         sku: "EQ-EL-LAVA", unit: 690,
-                         attrs: [("Rozmiar", "full"), ("Kompatybilny Inhalator", "FLAEM Wi.NebGo"), ("Ilość wejść", "1")]),
+                    item(name: "Subscription · Roaster's Choice 3-Month",
+                         qty: 1, sku: "SUB-RC-3MO", unit: 165,
+                         attrs: [("Tier", "Roaster's Choice"), ("Frequency", "Monthly · 3 months"), ("Bag size", "12oz")]),
                   ],
-                  total: 690, addr: gdanskAddress(name: "Agnieszka Kaczmarek")),
+                  total: 165, addr: usAddress("Robert Patel", "550 106th Ave NE", "Bellevue", "WA", "98004")),
 
-            order(id: "ord-16", number: "10157", date: daysAgo(7, hour: 13, minute: 8),
+            order(id: "ord-16", number: "20232", date: daysAgo(7, hour: 13, minute: 8),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Łukasz Nowicki", "lukasz.nowicki@gmail.com", "+48 535 221 998"),
+                  customer: ("Isabella Rossi", "isabella.rossi@libero.it", "+39 02 5550 4477"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia CLASSIC EQUINEINHALER Glacial Blue", qty: 3,
-                         sku: "EQ-CL-GLAC", unit: 422,
-                         attrs: [("Rozmiar", "pony"), ("Kompatybilny Inhalator", "TM-NEB Micro Mesh")]),
+                    item(name: "Espresso Forte Blend DARK ROAST",
+                         qty: 6, sku: "BL-ESP-DARK", unit: 20,
+                         attrs: [("Weight", "12oz"), ("Grind", "Espresso fine")]),
                   ],
-                  total: 1266, addr: wroclawAddress(name: "Łukasz Nowicki"),
-                  note: "Stadnina koni — 3 sztuki w zestawie"),
+                  total: 120, addr: euAddress("Isabella Rossi", "Via Brera 28", "Milano", "20121", "Italy"),
+                  note: "Wholesale account — bulk pricing applied"),
 
-            order(id: "ord-17", number: "10156", date: daysAgo(7, hour: 9, minute: 55),
+            order(id: "ord-17", number: "20231", date: daysAgo(7, hour: 9, minute: 55),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Patrycja Adamczyk", "patrycja.a@onet.pl", "+48 600 778 332"),
+                  customer: ("William Carter", "w.carter@gmail.com", "+1 678 555 1199"),
                   items: [
-                    item(name: "Maska do inhalacji dla konia ELASTIC EQUINEINHALER Baby Blue", qty: 1,
-                         sku: "EQ-EL-BABY", unit: 690,
-                         attrs: [("Rozmiar", "cob"), ("Kompatybilny Inhalator", "FLAEM Wi.NebGo"), ("Ilość wejść", "1")]),
+                    item(name: "Single Origin Kenya Nyeri LIGHT ROAST",
+                         qty: 2, sku: "SO-KEN-NYR", unit: 26,
+                         attrs: [("Weight", "1lb"), ("Grind", "Whole bean"), ("Roast Level", "Light")]),
                   ],
-                  total: 690, addr: krakowAddress(name: "Patrycja Adamczyk")),
+                  total: 52, addr: usAddress("William Carter", "1280 Peachtree St NE", "Atlanta", "GA", "30309")),
 
-            order(id: "ord-18", number: "10155", date: daysAgo(8, hour: 16, minute: 4),
+            order(id: "ord-18", number: "20230", date: daysAgo(8, hour: 16, minute: 4),
                   paid: .paid, fulfilled: .fulfilled,
-                  customer: ("Bartosz Górski", "bartek.gorski@gmail.com", "+48 605 110 887"),
+                  customer: ("Grace Bennett", "grace.bennett@me.com", "+1 206 555 0099"),
                   items: [
-                    item(name: "Inhalator FLAEM Nebulair+", qty: 1,
-                         sku: "INH-FL-NEB", unit: 1091,
-                         attrs: []),
+                    item(name: "Cold Brew Concentrate Pack DARK ROAST",
+                         qty: 1, sku: "CB-PACK-DK", unit: 28,
+                         attrs: [("Weight", "1lb"), ("Grind", "Coarse"), ("Roast Level", "Dark")]),
                   ],
-                  total: 1091, addr: poznanAddress(name: "Bartosz Górski")),
+                  total: 28, addr: usAddress("Grace Bennett", "2100 Westlake Ave N", "Seattle", "WA", "98109")),
         ]
 
-        let summary = Analytics.summarize(orders: orders, fallbackCurrency: "PLN")
+        let summary = Analytics.summarize(orders: orders, fallbackCurrency: "USD")
         return CachedSnapshot(orders: orders, summary: summary)
     }()
 
     /// IDs of orders pre-marked as printed so the "Printed" filter has content
-    /// for screenshots. Two recent ones are printed, leaving the rest pending.
+    /// for screenshots. Three recent ones are printed, leaving the rest pending.
     static let printedOrderIds: Set<String> = ["ord-7", "ord-8", "ord-10"]
 
     // MARK: - Builders
@@ -233,18 +239,18 @@ enum MockData {
         WixOrder(
             id: id, number: number, createdDate: date,
             status: .approved, paymentStatus: paid, fulfillmentStatus: fulfilled,
-            total: Money(amount: Decimal(total), currency: "PLN"),
-            subtotal: Money(amount: Decimal(total - 15), currency: "PLN"),
-            shipping: Money(amount: 15, currency: "PLN"),
+            total: Money(amount: Decimal(total), currency: "USD"),
+            subtotal: Money(amount: Decimal(max(total - 6, 0)), currency: "USD"),
+            shipping: Money(amount: 6, currency: "USD"),
             tax: nil, discount: nil,
             lineItems: items,
             buyerName: customer.name, buyerEmail: customer.email, buyerPhone: customer.phone,
             shippingAddress: addr, billingAddress: addr,
-            shippingMethod: "InPost Paczkomat 24/7",
+            shippingMethod: "USPS Priority Mail",
             paymentMethod: nil,
             note: note,
             channel: "web",
-            weight: 0.4, weightUnit: "kg"
+            weight: 0.5, weightUnit: "lb"
         )
     }
 
@@ -254,31 +260,23 @@ enum MockData {
         return WixOrder.LineItem(
             productId: sku, name: name, quantity: qty,
             sku: sku,
-            unitPrice: Money(amount: Decimal(unit), currency: "PLN"),
-            lineTotal: Money(amount: Decimal(unit * qty), currency: "PLN"),
+            unitPrice: Money(amount: Decimal(unit), currency: "USD"),
+            lineTotal: Money(amount: Decimal(unit * qty), currency: "USD"),
             variant: variant,
             attributes: attributes
         )
     }
 
-    private static func krakowAddress(name: String) -> WixOrder.Address {
-        WixOrder.Address(line1: "ul. Floriańska 12/4", line2: nil, city: "Kraków", region: "Małopolskie",
-                         postalCode: "31-019", country: "Polska", recipient: name, company: nil)
+    private static func usAddress(_ name: String, _ line1: String, _ city: String, _ state: String, _ zip: String) -> WixOrder.Address {
+        WixOrder.Address(line1: line1, line2: nil, city: city, region: state,
+                         postalCode: zip, country: "United States", recipient: name, company: nil)
     }
-    private static func warsawAddress(name: String) -> WixOrder.Address {
-        WixOrder.Address(line1: "ul. Marszałkowska 87", line2: "lok. 22", city: "Warszawa", region: "Mazowieckie",
-                         postalCode: "00-683", country: "Polska", recipient: name, company: nil)
+    private static func ukAddress(_ name: String, _ line1: String, _ city: String, _ postcode: String) -> WixOrder.Address {
+        WixOrder.Address(line1: line1, line2: nil, city: city, region: "England",
+                         postalCode: postcode, country: "United Kingdom", recipient: name, company: nil)
     }
-    private static func gdanskAddress(name: String) -> WixOrder.Address {
-        WixOrder.Address(line1: "ul. Długa 47", line2: nil, city: "Gdańsk", region: "Pomorskie",
-                         postalCode: "80-831", country: "Polska", recipient: name, company: nil)
-    }
-    private static func wroclawAddress(name: String) -> WixOrder.Address {
-        WixOrder.Address(line1: "ul. Świdnicka 8c", line2: nil, city: "Wrocław", region: "Dolnośląskie",
-                         postalCode: "50-067", country: "Polska", recipient: name, company: nil)
-    }
-    private static func poznanAddress(name: String) -> WixOrder.Address {
-        WixOrder.Address(line1: "ul. Półwiejska 32", line2: nil, city: "Poznań", region: "Wielkopolskie",
-                         postalCode: "61-888", country: "Polska", recipient: name, company: nil)
+    private static func euAddress(_ name: String, _ line1: String, _ city: String, _ postcode: String, _ country: String) -> WixOrder.Address {
+        WixOrder.Address(line1: line1, line2: nil, city: city, region: nil,
+                         postalCode: postcode, country: country, recipient: name, company: nil)
     }
 }
