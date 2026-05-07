@@ -19,6 +19,7 @@ struct SettingsView: View {
                 connectionCard
                 refreshCard
                 productFilterCard
+                socialAccountsCard
             }
             .padding(WP.Spacing.xl)
             .frame(maxWidth: 760)
@@ -194,6 +195,154 @@ struct SettingsView: View {
         guard !productSearch.isEmpty else { return store.availableProducts }
         let q = productSearch.lowercased()
         return store.availableProducts.filter { $0.name.lowercased().contains(q) }
+    }
+
+    @State private var newInstagramHandle: String = ""
+    @State private var manualCounts: [String: String] = [:]   // account.id -> text input
+    @State private var fetchingId: String? = nil
+    @State private var fetchFailed: Set<String> = []
+
+    private var socialAccountsCard: some View {
+        VStack(alignment: .leading, spacing: WP.Spacing.md) {
+            WPSectionHeader(icon: "person.crop.circle.badge.checkmark", title: "Social media")
+
+            Text("Track follower counts and growth alongside your shop analytics. Instagram public-profile scraping is rate-limited; if auto-fetch fails, set the count manually and update it from your phone whenever you check your profile.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Add new Instagram account
+            HStack(spacing: 8) {
+                Image(systemName: "camera.fill")
+                    .foregroundStyle(Color.wpAccent)
+                    .frame(width: 14)
+                Text("@")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                TextField("instagram username", text: $newInstagramHandle)
+                    .textFieldStyle(.roundedBorder)
+                Button("Add") {
+                    let handle = newInstagramHandle.trimmingCharacters(in: CharacterSet(charactersIn: "@ /"))
+                    guard !handle.isEmpty else { return }
+                    let acct = SocialAccount(platform: .instagram, handle: handle, fetchSource: .auto)
+                    store.addSocialAccount(acct)
+                    newInstagramHandle = ""
+                    Task {
+                        fetchingId = acct.id
+                        let ok = await store.refreshSocialAccount(acct)
+                        if !ok { fetchFailed.insert(acct.id) }
+                        fetchingId = nil
+                    }
+                }
+                .buttonStyle(.wpPrimary)
+                .disabled(newInstagramHandle.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            // Existing accounts
+            if !store.socialAccounts.isEmpty {
+                Rectangle().fill(Color.wpHairline).frame(height: 0.5)
+                VStack(spacing: 8) {
+                    ForEach(store.socialAccounts) { account in
+                        socialAccountRow(account)
+                    }
+                }
+            }
+        }
+        .wpCard()
+    }
+
+    @ViewBuilder
+    private func socialAccountRow(_ account: SocialAccount) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: account.platform.icon)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.wpAccent)
+                .frame(width: 22, height: 22)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    if let url = account.platform.profileURL(account.handle) {
+                        Link("@\(account.handle)", destination: url)
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    } else {
+                        Text("@\(account.handle)").font(.callout.weight(.semibold))
+                    }
+                    Text(account.platform.displayName)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(account.fetchSource == .auto ? "AUTO" : "MANUAL")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(0.4)
+                        .foregroundStyle(account.fetchSource == .auto ? Color.wpPositive : .secondary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background((account.fetchSource == .auto ? Color.wpPositive : Color.secondary).opacity(0.12), in: Capsule())
+                }
+                HStack(spacing: 6) {
+                    Text("\(account.followerCount)")
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.wpAccent)
+                    Text("followers")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let delta = account.dayOverDayChange, delta != 0 {
+                        Text(delta > 0 ? "▲ \(delta) since last fetch" : "▼ \(abs(delta)) since last fetch")
+                            .font(.caption2)
+                            .foregroundStyle(delta > 0 ? Color.wpPositive : Color.wpDanger)
+                    }
+                }
+                // Manual override
+                HStack(spacing: 6) {
+                    let binding = Binding(
+                        get: { manualCounts[account.id] ?? "" },
+                        set: { manualCounts[account.id] = $0 }
+                    )
+                    TextField("Update manually", text: binding)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 160)
+                    Button("Set") {
+                        if let n = Int(manualCounts[account.id]?.filter(\.isNumber) ?? "") {
+                            store.setSocialFollowerCountManually(account, count: n)
+                            manualCounts[account.id] = ""
+                        }
+                    }
+                    .buttonStyle(.wpGhost)
+                    .disabled((manualCounts[account.id] ?? "").isEmpty)
+
+                    Button {
+                        Task {
+                            fetchingId = account.id
+                            fetchFailed.remove(account.id)
+                            let ok = await store.refreshSocialAccount(account)
+                            if !ok { fetchFailed.insert(account.id) }
+                            fetchingId = nil
+                        }
+                    } label: {
+                        if fetchingId == account.id {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Label("Try fetch", systemImage: "arrow.clockwise")
+                        }
+                    }
+                    .buttonStyle(.wpGhost)
+
+                    Spacer()
+
+                    Button("Remove") { store.removeSocialAccount(account) }
+                        .buttonStyle(.wpDanger)
+                }
+                if fetchFailed.contains(account.id) {
+                    Text("Auto-fetch failed — Instagram blocked the request. Update the count manually for now.")
+                        .font(.caption2)
+                        .foregroundStyle(Color.wpWarning)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.wpSurface.opacity(0.4), in: RoundedRectangle(cornerRadius: WP.Radius.sm, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: WP.Radius.sm, style: .continuous).strokeBorder(Color.wpHairline, lineWidth: 0.5))
     }
 }
 

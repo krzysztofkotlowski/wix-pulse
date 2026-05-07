@@ -24,13 +24,14 @@ struct AnalyticsWidgetBundle: WidgetBundle {
 struct AnalyticsEntry: TimelineEntry {
     let date: Date
     let summary: OrderSummary
+    let traffic: SiteTraffic?
     let isFiltered: Bool
     let isPlaceholder: Bool
 }
 
 struct AnalyticsProvider: TimelineProvider {
     func placeholder(in context: Context) -> AnalyticsEntry {
-        AnalyticsEntry(date: Date(), summary: .placeholder, isFiltered: false, isPlaceholder: true)
+        AnalyticsEntry(date: Date(), summary: .placeholder, traffic: nil, isFiltered: false, isPlaceholder: true)
     }
     func getSnapshot(in context: Context, completion: @escaping (AnalyticsEntry) -> Void) {
         completion(makeEntry())
@@ -48,9 +49,17 @@ struct AnalyticsProvider: TimelineProvider {
         let filter = SharedStorage.shared.productFilter
         if filter.isActive {
             let filtered = filter.apply(to: snap.orders)
-            return AnalyticsEntry(date: Date(), summary: Analytics.summarize(orders: filtered, fallbackCurrency: snap.summary.currency), isFiltered: true, isPlaceholder: stored == nil)
+            return AnalyticsEntry(date: Date(),
+                                  summary: Analytics.summarize(orders: filtered, fallbackCurrency: snap.summary.currency),
+                                  traffic: snap.traffic,
+                                  isFiltered: true,
+                                  isPlaceholder: stored == nil)
         } else {
-            return AnalyticsEntry(date: Date(), summary: snap.summary, isFiltered: false, isPlaceholder: stored == nil)
+            return AnalyticsEntry(date: Date(),
+                                  summary: snap.summary,
+                                  traffic: snap.traffic,
+                                  isFiltered: false,
+                                  isPlaceholder: stored == nil)
         }
     }
 }

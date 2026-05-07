@@ -244,13 +244,54 @@ public struct OrderSummary: Codable, Hashable, Sendable {
     )
 }
 
+public struct SiteTraffic: Codable, Hashable, Sendable {
+    public let sessionsToday: Int
+    public let sessions30Days: Int
+    public let uniqueVisitorsToday: Int
+    public let uniqueVisitors30Days: Int
+    public let dailySessions: [DailyMetric]
+    public let dailyUniqueVisitors: [DailyMetric]
+    public let updatedAt: Date
+
+    public struct DailyMetric: Codable, Hashable, Sendable, Identifiable {
+        public var id: Date { date }
+        public let date: Date
+        public let value: Int
+        public init(date: Date, value: Int) { self.date = date; self.value = value }
+    }
+
+    public init(sessionsToday: Int, sessions30Days: Int,
+                uniqueVisitorsToday: Int, uniqueVisitors30Days: Int,
+                dailySessions: [DailyMetric], dailyUniqueVisitors: [DailyMetric],
+                updatedAt: Date) {
+        self.sessionsToday = sessionsToday
+        self.sessions30Days = sessions30Days
+        self.uniqueVisitorsToday = uniqueVisitorsToday
+        self.uniqueVisitors30Days = uniqueVisitors30Days
+        self.dailySessions = dailySessions
+        self.dailyUniqueVisitors = dailyUniqueVisitors
+        self.updatedAt = updatedAt
+    }
+}
+
 public struct CachedSnapshot: Codable, Sendable {
     public let orders: [WixOrder]
     public let summary: OrderSummary
+    public let traffic: SiteTraffic?
 
-    public init(orders: [WixOrder], summary: OrderSummary) {
-        self.orders = orders; self.summary = summary
+    public init(orders: [WixOrder], summary: OrderSummary, traffic: SiteTraffic? = nil) {
+        self.orders = orders; self.summary = summary; self.traffic = traffic
     }
+
+    /// Backwards-compatible decoding — older cached snapshots have no traffic field.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.orders = try c.decode([WixOrder].self, forKey: .orders)
+        self.summary = try c.decode(OrderSummary.self, forKey: .summary)
+        self.traffic = try? c.decodeIfPresent(SiteTraffic.self, forKey: .traffic)
+    }
+
+    private enum CodingKeys: String, CodingKey { case orders, summary, traffic }
 
     public static let placeholder: CachedSnapshot = {
         let sampleProducts = ["Linen Tee", "Ceramic Mug", "Hand Cream", "Tote Bag"]

@@ -52,7 +52,12 @@ A native macOS app and desktop widgets that turn a [Wix](https://www.wix.com/) s
 - **Hero card** — today's revenue as a large rounded numeral with a sparkline of the past 7 days.
 - **Metric grid** — today's orders, 30-day orders, 30-day revenue, average order value, with pace indicators (▲ N% vs avg).
 - **Charts** — bar chart of revenue, line+area chart of orders, both Swift Charts.
-- **Analytics widget** (Small / Medium / Large / Extra Large) for at-a-glance numbers on the desktop.
+- **Site traffic** — sessions and unique visitors for today and the last 30 days, plus a 30-day sessions chart. Pulled from Wix's Analytics Data API. Requires the `Read Site Analytics` permission on your API key; if missing, the Analytics tab shows a friendly hint card linking to the Wix dashboard.
+- **Analytics widget** (Small / Medium / Large / Extra Large) for at-a-glance numbers on the desktop. Medium and Large variants surface today's sessions / visitors alongside revenue.
+
+### Social presence
+- **Instagram follower tracker** — add your handle in Settings, the app records a daily snapshot of your follower count and shows it on the Analytics tab as a card with a 90-day sparkline and week-over-week delta.
+- **Auto + Manual modes** — auto-fetch via Instagram's public web profile endpoint when it works; if Instagram blocks the request (rate limits in 2026 are aggressive), the row exposes a manual count input so you can keep history accurate from your phone in seconds. Designed to be expanded to Twitter/X, TikTok, and YouTube without UI changes.
 
 ### Quality of life
 - Refined macOS-Tahoe-friendly palette — cool slate accent, charcoal surface, regular-material cards, hairline borders.
@@ -148,8 +153,18 @@ xcodebuild -scheme WixPulse -destination 'platform=macOS' \
 
 > **Forking:** Search-and-replace `kkotlowski` with your own reverse-DNS prefix in `project.yml` and the three `.entitlements` files, then re-run `xcodegen generate`.
 
+## Notes & limitations
+
+- **Wix API key permissions.** Order data needs `Wix Stores → Read Stores` and `Wix eCommerce → Read Orders`. Site traffic additionally needs `Wix Site Analytics → Read Site Analytics` — if your key is missing it, the Analytics tab gracefully shows a hint card instead of breaking.
+- **Instagram follower fetcher is best-effort.** It calls Instagram's public `web_profile_info` endpoint with a browser User-Agent. Instagram aggressively rate-limits unauthenticated traffic, so auto-fetch may fail intermittently or stop working entirely on a flagged network. The Settings UI exposes a manual override for this exact reason — type the count from your phone, the app records the daily snapshot regardless of fetch state. For high-volume or business use, switch to the official **Instagram Graph API** (Facebook business account + app review required) or a paid third-party scraping service. The current implementation is intended for personal portfolios and small shops.
+- **macOS Tahoe widget tinting.** macOS Tahoe lets users render widgets in monochrome / tinted mode. The widget code uses `widgetAccentable(true)` on background shapes (not foreground text) so quantity badges, status pills, and accent surfaces stay readable in every rendering mode.
+- **Widget refresh cadence.** macOS throttles widget timeline reloads, especially on battery. The app's recurring refresh loop calls `WidgetCenter.reloadAllTimelines()` every cycle as a hint, but actual on-screen updates can lag by minutes. The 5/15/30/60 min options in Settings are upper bounds, not guarantees.
+
 ## Roadmap
 
+- [x] Site traffic in Analytics + widget
+- [x] Instagram follower tracking
+- [ ] Twitter/X, TikTok, YouTube follower tracking (the social model is already platform-agnostic)
 - [ ] iOS app + Lock Screen widgets
 - [ ] OAuth so users don't have to generate their own API keys
 - [ ] Menu-bar companion mode

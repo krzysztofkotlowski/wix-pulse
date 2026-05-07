@@ -225,6 +225,30 @@ enum MockData {
     /// for screenshots. Three recent ones are printed, leaving the rest pending.
     static let printedOrderIds: Set<String> = ["ord-7", "ord-8", "ord-10"]
 
+    /// One Instagram account with a 30-day history of synthetic follower
+    /// growth so the Social presence card on the Analytics tab renders a
+    /// proper sparkline for screenshots.
+    static let socialAccounts: [SocialAccount] = {
+        let cal = Calendar.current
+        let now = cal.startOfDay(for: Date())
+        // Smooth-ish growth from ~3,852 to ~4,212 over 30 days, with mild jitter.
+        let history: [SocialAccount.DailySnapshot] = (0..<30).reversed().map { offset in
+            let day = cal.date(byAdding: .day, value: -offset, to: now) ?? now
+            let base = 4212 - (offset * 12)
+            let jitter = (offset % 3 == 0) ? -3 : (offset % 5 == 0 ? 2 : 0)
+            return SocialAccount.DailySnapshot(date: day, count: max(0, base + jitter))
+        }
+        let account = SocialAccount(
+            platform: .instagram,
+            handle: "forgewright.minis",
+            followerCount: history.last?.count ?? 4212,
+            lastUpdated: Date(),
+            history: history,
+            fetchSource: .auto
+        )
+        return [account]
+    }()
+
     // MARK: - Builders
 
     private static func order(

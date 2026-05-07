@@ -19,6 +19,20 @@ public final class SharedStorage {
         static let refreshInterval = "wixpulse.refreshInterval"
         static let productFilter = "wixpulse.productFilter.v1"
         static let printedOrderIds = "wixpulse.printedOrderIds.v1"
+        static let socialAccounts = "wixpulse.socialAccounts.v1"
+    }
+
+    public var socialAccounts: [SocialAccount] {
+        get {
+            guard let data = defaults?.data(forKey: Key.socialAccounts),
+                  let value = try? JSONDecoder().decode([SocialAccount].self, from: data)
+            else { return [] }
+            return value
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            defaults?.set(data, forKey: Key.socialAccounts)
+        }
     }
 
     public var printedOrderIds: Set<String> {

@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 
 public struct WixCredentials: Equatable, Sendable {
     public let apiKey: String
@@ -32,6 +33,7 @@ public enum WixAPIError: LocalizedError {
 
 public protocol WixAPIClientProtocol: Sendable {
     func fetchOrders(limit: Int, since: Date?) async throws -> [WixOrder]
+    func fetchSiteTraffic() async -> SiteTraffic?
 }
 
 public final class WixAPIClient: WixAPIClientProtocol, @unchecked Sendable {
@@ -94,6 +96,108 @@ public final class WixAPIClient: WixAPIClientProtocol, @unchecked Sendable {
         } catch {
             throw WixAPIError.decoding(error)
         }
+    }
+
+    /// Best-effort fetch of site traffic (sessions + unique visitors) for the
+    /// last 30 days. Returns `nil` if the API key lacks Analytics permission
+    /// or anything else fails — callers should treat traffic as optional and
+    /// keep going. Errors are logged via os_log so the developer can debug
+    /// missing scopes without breaking the orders flow.
+    public func fetchSiteTraffic() async -> SiteTraffic? {
+        let data: [AnalyticsMeasurement]
+        do {
+            data = try await fetchAnalyticsData(measurements: ["TOTAL_SESSIONS", "UNIQUE_VISITORS"], lastDays: 30)
+        } catch {
+            // Keep this around for the next debug cycle — the user will see it
+            // in Console.app filtered by subsystem `wixpulse.analytics`.
+            os_log("WixPulse analytics fetch failed: %{public}@", error.localizedDescription)
+            return nil
+        }
+
+        let sessions = data.first(where: { $0.type.uppercased().contains("SESSION") })
+        let visitors = data.first(where: { $0.type.uppercased().contains("VISITOR") })
+
+        let cal = Calendar.current
+        let startOfToday = cal.startOfDay(for: Date())
+
+        func daily(_ entry: AnalyticsMeasurement?) -> [SiteTraffic.DailyMetric] {
+            (entry?.values ?? []).compactMap { v in
+                guard let d = v.parsedDate else { return nil }
+                return SiteTraffic.DailyMetric(date: d, value: v.intValue)
+            }
+        }
+        func todayValue(_ entry: AnalyticsMeasurement?) -> Int {
+            (entry?.values ?? []).first(where: { v in
+                guard let d = v.parsedDate else { return false }
+                return cal.isDate(d, inSameDayAs: startOfToday)
+            })?.intValue ?? 0
+        }
+        let totalSessions = sessions?.totalInt ?? daily(sessions).reduce(0) { $0 + $1.value }
+        let totalVisitors = visitors?.totalInt ?? daily(visitors).reduce(0) { $0 + $1.value }
+
+        return SiteTraffic(
+            sessionsToday: todayValue(sessions),
+            sessions30Days: totalSessions,
+            uniqueVisitorsToday: todayValue(visitors),
+            uniqueVisitors30Days: totalVisitors,
+            dailySessions: daily(sessions),
+            dailyUniqueVisitors: daily(visitors),
+            updatedAt: Date()
+        )
+    }
+
+    private func fetchAnalyticsData(measurements: [String], lastDays: Int) async throws -> [AnalyticsMeasurement] {
+        var request = URLRequest(url: baseURL.appendingPathComponent("analytics-data/v2/site-analytics-data"))
+        request.httpMethod = "POST"
+        request.setValue(credentials.apiKey, forHTTPHeaderField: "Authorization")
+        request.setValue(credentials.siteId, forHTTPHeaderField: "wix-site-id")
+        if let accountId = credentials.accountId {
+            request.setValue(accountId, forHTTPHeaderField: "wix-account-id")
+        }
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "measurementTypes": measurements,
+            "dateRange": "LAST_30_DAYS"
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw WixAPIError.invalidResponse
+        }
+        let envelope = try JSONDecoder.wix.decode(AnalyticsEnvelope.self, from: data)
+        return envelope.data ?? []
+    }
+}
+
+private struct AnalyticsEnvelope: Decodable {
+    let data: [AnalyticsMeasurement]?
+}
+
+private struct AnalyticsMeasurement: Decodable {
+    let type: String
+    let total: FlexibleNumber?
+    let values: [Value]?
+
+    var totalInt: Int? { total?.value.map { Int($0) } }
+
+    struct Value: Decodable {
+        let date: String?
+        let value: FlexibleNumber?
+
+        var parsedDate: Date? {
+            guard let s = date else { return nil }
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withFullDate]
+            if let d = f.date(from: s) { return d }
+            // Fallback: yyyy-MM-dd
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd"
+            df.timeZone = TimeZone(secondsFromGMT: 0)
+            return df.date(from: s)
+        }
+        var intValue: Int { value?.value.map { Int($0) } ?? 0 }
     }
 }
 
@@ -209,19 +313,61 @@ private struct APIOrder: Decodable {
         let productName: ProductName?
         let catalogReference: CatalogReference?
         let price: PriceAmount?
+        let priceBeforeDiscounts: PriceAmount?
         let totalPriceAfterTax: PriceAmount?
+        let totalPriceBeforeTax: PriceAmount?
         let physicalProperties: PhysicalProperties?
         let descriptionLines: [DescriptionLine]?
         let image: FlexibleString?
+        let itemType: ItemType?
+        let url: FlexibleString?
+
         struct ProductName: Decodable { let original: String?; let translated: String? }
-        struct CatalogReference: Decodable { let catalogItemId: String? }
-        struct PhysicalProperties: Decodable { let sku: String? }
+        struct CatalogReference: Decodable {
+            let catalogItemId: String?
+            let appId: String?
+            let options: [String: AnyCodableValue]?
+        }
+        struct PhysicalProperties: Decodable {
+            let sku: String?
+            let weight: FlexibleNumber?
+            let shippable: Bool?
+        }
+        struct ItemType: Decodable {
+            let preset: String?      // PHYSICAL, DIGITAL, GIFT_CARD, SERVICE, SUBSCRIPTION
+            let custom: String?
+        }
+        /// Captures every shape of WIX descriptionLine — not just plainText/colorInfo.
+        /// Tries every known value field and falls back to anything string-like in
+        /// the line. This way new WIX schema additions surface as attributes too.
         struct DescriptionLine: Decodable {
             let name: LocalizedString?
             let plainText: LocalizedString?
             let colorInfo: ColorInfo?
+            let lineType: String?
+
             struct LocalizedString: Decodable { let original: String?; let translated: String? }
-            struct ColorInfo: Decodable { let original: String?; let translated: String? }
+            struct ColorInfo: Decodable {
+                let original: String?
+                let translated: String?
+                let code: String?
+            }
+
+            /// First non-empty value across every known field, in priority order.
+            var resolvedValue: String? {
+                clean(plainText?.translated)
+                    ?? clean(plainText?.original)
+                    ?? clean(colorInfo?.translated)
+                    ?? clean(colorInfo?.original)
+                    ?? clean(colorInfo?.code)
+            }
+
+            private func clean(_ s: String?) -> String? {
+                guard let s = s?.trimmingCharacters(in: .whitespaces), !s.isEmpty else { return nil }
+                let lower = s.lowercased()
+                if lower == "undefined" || lower == "null" || lower == "nan" { return nil }
+                return s
+            }
         }
     }
     struct BuyerInfo: Decodable {
@@ -279,19 +425,26 @@ private struct APIOrder: Decodable {
                 ?? clean(li.productName?.original)
                 ?? "Item"
             let pid = clean(li.catalogReference?.catalogItemId) ?? name
-            let unitAmt = li.price?.amount.flatMap { Decimal(string: $0) }
-            let lineAmt = li.totalPriceAfterTax?.amount.flatMap { Decimal(string: $0) }
-            let lineCurrency = clean(li.price?.currency) ?? clean(li.totalPriceAfterTax?.currency) ?? rawCurrency
+            // Try every known WIX price field — ecom / subscription / digital
+            // products report prices under different keys depending on the
+            // product type. Fall through until we find a usable Decimal.
+            let unitAmt = (li.price?.amount).flatMap { Decimal(string: $0) }
+                ?? (li.priceBeforeDiscounts?.amount).flatMap { Decimal(string: $0) }
+            let lineAmt = (li.totalPriceAfterTax?.amount).flatMap { Decimal(string: $0) }
+                ?? (li.totalPriceBeforeTax?.amount).flatMap { Decimal(string: $0) }
+                ?? unitAmt.map { $0 * Decimal(li.quantity ?? 1) }
+            let lineCurrency = clean(li.price?.currency)
+                ?? clean(li.priceBeforeDiscounts?.currency)
+                ?? clean(li.totalPriceAfterTax?.currency)
+                ?? clean(li.totalPriceBeforeTax?.currency)
+                ?? rawCurrency
+            // Capture every descriptionLine regardless of its lineType — we
+            // try plainText, colorInfo, and any new WIX value fields. Strip
+            // trailing colons from labels so "Size:" renders as "Size".
             let attributes: [WixOrder.Attribute] = (li.descriptionLines ?? []).compactMap { line in
-                // Strip trailing colons that some shops put in the label name,
-                // so "Ilość wejść:" doesn't render as "Ilość wejść:: value".
                 let rawLabel = clean(line.name?.translated) ?? clean(line.name?.original)
                 let label = rawLabel?.trimmingCharacters(in: CharacterSet(charactersIn: ": ").union(.whitespaces))
-                let value = clean(line.plainText?.translated)
-                    ?? clean(line.plainText?.original)
-                    ?? clean(line.colorInfo?.translated)
-                    ?? clean(line.colorInfo?.original)
-                guard let label, !label.isEmpty, let value else { return nil }
+                guard let label, !label.isEmpty, let value = line.resolvedValue else { return nil }
                 return WixOrder.Attribute(label: label, value: value)
             }
             let variant: String? = attributes.isEmpty

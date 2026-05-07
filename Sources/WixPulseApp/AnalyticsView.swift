@@ -22,8 +22,92 @@ struct AnalyticsView: View {
 
                 revenueChart
                 orderCountChart
+
+                if let traffic = store.snapshot?.traffic {
+                    trafficSection(traffic: traffic)
+                } else {
+                    trafficUnavailableCard
+                }
+
+                if !store.socialAccounts.isEmpty {
+                    socialSection
+                }
             }
             .padding(WP.Spacing.xl)
+        }
+    }
+
+    private var trafficUnavailableCard: some View {
+        HStack(alignment: .top, spacing: WP.Spacing.md) {
+            Image(systemName: "person.2.slash")
+                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(Color.wpAccent)
+                .frame(width: 32)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Site traffic unavailable")
+                    .font(.system(.callout, weight: .semibold))
+                Text("Add the 'Read Site Analytics' permission to your Wix API key to see sessions and unique visitors here and on the widget. Settings → API Keys → edit → enable Site Analytics → regenerate → paste the new key in WixPulse Settings.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Link(destination: URL(string: "https://manage.wix.com/account/api-keys")!) {
+                    Label("Open Wix API Keys", systemImage: "arrow.up.right.square")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.wpAccent)
+                }
+                .padding(.top, 2)
+            }
+            Spacer()
+        }
+        .wpCard()
+    }
+
+    @ViewBuilder
+    private func trafficSection(traffic: SiteTraffic) -> some View {
+        VStack(alignment: .leading, spacing: WP.Spacing.md) {
+            WPSectionHeader(icon: "person.2.fill", title: "Site traffic")
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: WP.Spacing.md)], spacing: WP.Spacing.md) {
+                WPMetricCard(eyebrow: "Today · sessions",
+                             value: "\(traffic.sessionsToday)",
+                             caption: pace(today: traffic.sessionsToday, daily: traffic.dailySessions.map(\.value)),
+                             icon: "wave.3.right",
+                             tint: .wpAccent)
+                WPMetricCard(eyebrow: "30 days · sessions",
+                             value: "\(traffic.sessions30Days)",
+                             caption: nil,
+                             icon: "person.2.wave.2.fill",
+                             tint: .wpPositive)
+                WPMetricCard(eyebrow: "Today · visitors",
+                             value: "\(traffic.uniqueVisitorsToday)",
+                             caption: pace(today: traffic.uniqueVisitorsToday, daily: traffic.dailyUniqueVisitors.map(\.value)),
+                             icon: "person.crop.circle.fill",
+                             tint: .wpAccent)
+                WPMetricCard(eyebrow: "30 days · visitors",
+                             value: "\(traffic.uniqueVisitors30Days)",
+                             caption: "unique",
+                             icon: "person.3.fill",
+                             tint: .wpWarning)
+            }
+
+            if traffic.dailySessions.count > 1 {
+                VStack(alignment: .leading, spacing: WP.Spacing.sm) {
+                    WPSectionHeader(icon: "chart.line.uptrend.xyaxis", title: "Sessions · last 30 days")
+                    Chart(traffic.dailySessions) { d in
+                        AreaMark(x: .value("Day", d.date, unit: .day),
+                                 y: .value("Sessions", d.value))
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(LinearGradient(colors: [Color.wpAccent.opacity(0.4), Color.wpAccent.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                        LineMark(x: .value("Day", d.date, unit: .day),
+                                 y: .value("Sessions", d.value))
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(Color.wpAccent)
+                            .lineStyle(.init(lineWidth: 2))
+                    }
+                    .frame(height: 180)
+                }
+                .wpCard()
+            }
         }
     }
 
@@ -131,5 +215,81 @@ struct AnalyticsView: View {
         let pct = Int(((Double(today) - avg) / avg) * 100)
         if pct == 0 { return "on pace" }
         return pct > 0 ? "▲ \(pct)% vs avg" : "▼ \(abs(pct))% vs avg"
+    }
+
+    @ViewBuilder
+    private var socialSection: some View {
+        VStack(alignment: .leading, spacing: WP.Spacing.md) {
+            WPSectionHeader(icon: "person.crop.circle.badge.checkmark", title: "Social presence")
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: WP.Spacing.md)], spacing: WP.Spacing.md) {
+                ForEach(store.socialAccounts) { account in
+                    socialCard(account)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func socialCard(_ account: SocialAccount) -> some View {
+        VStack(alignment: .leading, spacing: WP.Spacing.sm) {
+            HStack(spacing: 8) {
+                Image(systemName: account.platform.icon)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.wpAccent)
+                    .font(.system(size: 16, weight: .semibold))
+                if let url = account.platform.profileURL(account.handle) {
+                    Link("@\(account.handle)", destination: url)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.primary)
+                } else {
+                    Text("@\(account.handle)").font(.callout.weight(.semibold))
+                }
+                Spacer()
+                Text(account.platform.displayName.uppercased())
+                    .font(.system(size: 8, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundStyle(.tertiary)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(account.followerCount)")
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.wpAccent)
+                Text("followers")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if let weekly = account.weekOverWeekChange, weekly != 0 {
+                    Text(weekly > 0 ? "▲ \(weekly) this week" : "▼ \(abs(weekly)) this week")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(weekly > 0 ? Color.wpPositive : Color.wpDanger)
+                }
+            }
+            if account.history.count > 1 {
+                Chart(account.history) { snap in
+                    AreaMark(x: .value("Day", snap.date, unit: .day),
+                             y: .value("Followers", snap.count))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(LinearGradient(colors: [Color.wpAccent.opacity(0.4), Color.wpAccent.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                    LineMark(x: .value("Day", snap.date, unit: .day),
+                             y: .value("Followers", snap.count))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(Color.wpAccent)
+                        .lineStyle(.init(lineWidth: 2))
+                }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .frame(height: 60)
+            }
+            HStack(spacing: 6) {
+                Text("Updated")
+                    .font(.caption2).foregroundStyle(.tertiary)
+                Text(account.lastUpdated, style: .relative)
+                    .font(.caption2).foregroundStyle(.tertiary)
+                Text("ago")
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+        .wpCard()
     }
 }
