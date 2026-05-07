@@ -4,11 +4,10 @@ import WixPulseCore
 /// Mock seed data for portfolio screenshots. Only compiled into the
 /// `screenshots-mock` branch — main branch never uses this.
 ///
-/// Models a fictional specialty coffee roaster ("Northern Ridge Coffee")
-/// with single-origin beans, signature blends, and an espresso line.
-/// Produces 18 orders across 8 days with realistic variety in roast
-/// levels, grind types, weights, customers from US/UK/DE/FR, and a few
-/// orders pre-marked as printed for the queue/printed/all filters.
+/// Models a fictional 3D-printing business: "Forgewright Miniatures",
+/// a tabletop-gaming miniatures studio. Products have natural variants
+/// (Scale, Material, Finish, Base) that show off the structured-attribute
+/// rendering in the widgets without overflowing the layout.
 enum MockData {
 
     static let snapshot: CachedSnapshot = {
@@ -25,44 +24,44 @@ enum MockData {
                   paid: .paid, fulfilled: .notFulfilled,
                   customer: ("Sarah Chen", "sarah.chen@gmail.com", "+1 415 555 0142"),
                   items: [
-                    item(name: "Single Origin Ethiopia Yirgacheffe LIGHT ROAST",
-                         qty: 2, sku: "SO-ETH-YIRG", unit: 22,
-                         attrs: [("Weight", "12oz"), ("Grind", "Whole bean"), ("Roast Level", "Light")]),
+                    item(name: "Ancient Red Dragon", qty: 1, sku: "DRG-RED-75",
+                         unit: 45,
+                         attrs: [("Scale", "75mm"), ("Material", "Resin"), ("Finish", "Unpainted")]),
                   ],
-                  total: 44, addr: usAddress("Sarah Chen", "1247 Castro St", "San Francisco", "CA", "94114")),
+                  total: 45, addr: usAddress("Sarah Chen", "1247 Castro St", "San Francisco", "CA", "94114")),
 
             order(id: "ord-2", number: "20246", date: daysAgo(0, hour: 11, minute: 5),
                   paid: .paid, fulfilled: .notFulfilled,
                   customer: ("James Whitmore", "j.whitmore@protonmail.com", "+44 20 7946 0119"),
                   items: [
-                    item(name: "Signature House Blend MEDIUM ROAST",
-                         qty: 1, sku: "BL-HOUSE-MED", unit: 18,
-                         attrs: [("Weight", "12oz"), ("Grind", "V60 / Pour-over")]),
-                    item(name: "Espresso Forte Blend DARK ROAST",
-                         qty: 1, sku: "BL-ESP-DARK", unit: 20,
-                         attrs: [("Weight", "12oz"), ("Grind", "Espresso fine")]),
+                    item(name: "Skeleton Warrior Squad", qty: 2, sku: "UND-SKL-32",
+                         unit: 18,
+                         attrs: [("Scale", "32mm"), ("Material", "PLA+"), ("Finish", "Primed")]),
                   ],
-                  total: 38, addr: ukAddress("James Whitmore", "47 Goodge Street, Flat 3", "London", "W1T 1TB")),
+                  total: 36, addr: ukAddress("James Whitmore", "47 Goodge Street, Flat 3", "London", "W1T 1TB")),
 
             order(id: "ord-3", number: "20245", date: daysAgo(0, hour: 9, minute: 41),
                   paid: .paid, fulfilled: .notFulfilled,
                   customer: ("Maria González", "maria.g@icloud.com", "+34 91 555 8842"),
                   items: [
-                    item(name: "Single Origin Colombia Huila MEDIUM ROAST",
-                         qty: 3, sku: "SO-COL-HUIL", unit: 19,
-                         attrs: [("Weight", "1lb"), ("Grind", "Whole bean"), ("Roast Level", "Medium")]),
+                    item(name: "Ranger of the North", qty: 1, sku: "HRO-RNG-32",
+                         unit: 22,
+                         attrs: [("Scale", "32mm"), ("Material", "Resin"), ("Base", "Forest")]),
+                    item(name: "Forest Terrain Pack", qty: 1, sku: "TER-FRS-PCK",
+                         unit: 28,
+                         attrs: [("Scale", "32mm"), ("Material", "PLA+")]),
                   ],
-                  total: 57, addr: euAddress("Maria González", "Calle de Serrano 88", "Madrid", "28006", "Spain"),
-                  note: "Please ship via standard post — no expedited"),
+                  total: 50, addr: euAddress("Maria González", "Calle de Serrano 88", "Madrid", "28006", "Spain"),
+                  note: "Birthday gift — please pack carefully"),
 
             // Yesterday
             order(id: "ord-4", number: "20244", date: daysAgo(1, hour: 19, minute: 47),
                   paid: .paid, fulfilled: .notFulfilled,
                   customer: ("David Klein", "d.klein@gmx.de", "+49 30 5550 1187"),
                   items: [
-                    item(name: "Decaf Brazilian Cerrado MEDIUM ROAST",
-                         qty: 1, sku: "DC-BRA-CER", unit: 24,
-                         attrs: [("Weight", "12oz"), ("Grind", "French press"), ("Roast Level", "Medium")]),
+                    item(name: "Goblin Raider Pack", qty: 1, sku: "GOB-RDR-28",
+                         unit: 24,
+                         attrs: [("Scale", "28mm"), ("Material", "PLA+"), ("Finish", "Unpainted")]),
                   ],
                   total: 24, addr: euAddress("David Klein", "Friedrichstraße 112", "Berlin", "10117", "Germany")),
 
@@ -70,152 +69,152 @@ enum MockData {
                   paid: .paid, fulfilled: .notFulfilled,
                   customer: ("Emily Park", "emily.park@gmail.com", "+1 312 555 0288"),
                   items: [
-                    item(name: "Cold Brew Concentrate Pack DARK ROAST",
-                         qty: 2, sku: "CB-PACK-DK", unit: 28,
-                         attrs: [("Weight", "1lb"), ("Grind", "Coarse"), ("Roast Level", "Dark")]),
-                    item(name: "Ceramic V60 Dripper",
-                         qty: 1, sku: "ACC-V60-WHT", unit: 32,
-                         attrs: [("Color", "Matte White"), ("Size", "02")]),
+                    item(name: "Dwarven Forge Set", qty: 1, sku: "DWF-SET-32",
+                         unit: 65,
+                         attrs: [("Scale", "32mm"), ("Material", "Resin"), ("Finish", "Pre-supported")]),
+                    item(name: "Magnetic Movement Tray", qty: 2, sku: "ACC-MAG-TRY",
+                         unit: 12,
+                         attrs: [("Size", "Medium"), ("Color", "Black")]),
                   ],
-                  total: 88, addr: usAddress("Emily Park", "2204 N Lincoln Ave", "Chicago", "IL", "60614")),
+                  total: 89, addr: usAddress("Emily Park", "2204 N Lincoln Ave", "Chicago", "IL", "60614")),
 
             order(id: "ord-6", number: "20242", date: daysAgo(1, hour: 8, minute: 32),
                   paid: .notPaid, fulfilled: .notFulfilled,
                   customer: ("Thomas O'Brien", "t.obrien@gmail.com", "+1 617 555 0993"),
                   items: [
-                    item(name: "Subscription · Roaster's Choice 3-Month",
-                         qty: 1, sku: "SUB-RC-3MO", unit: 165,
-                         attrs: [("Tier", "Roaster's Choice"), ("Frequency", "Monthly · 3 months"), ("Bag size", "12oz")]),
+                    item(name: "Patreon · Hero Bundle (March)", qty: 1, sku: "SUB-HRO-MAR",
+                         unit: 35,
+                         attrs: [("Tier", "Hero"), ("Scale", "32mm"), ("Material", "Resin")]),
                   ],
-                  total: 165, addr: usAddress("Thomas O'Brien", "184 Beacon Street", "Boston", "MA", "02116")),
+                  total: 35, addr: usAddress("Thomas O'Brien", "184 Beacon Street", "Boston", "MA", "02116")),
 
             // 2-3 days ago — already marked printed
             order(id: "ord-7", number: "20241", date: daysAgo(2, hour: 16, minute: 18),
                   paid: .paid, fulfilled: .notFulfilled,
                   customer: ("Sophie Martin", "sophie.martin@orange.fr", "+33 1 4555 7821"),
                   items: [
-                    item(name: "Signature House Blend MEDIUM ROAST",
-                         qty: 2, sku: "BL-HOUSE-MED", unit: 18,
-                         attrs: [("Weight", "12oz"), ("Grind", "Aeropress")]),
+                    item(name: "Elven Archer Squad", qty: 1, sku: "ELF-ARC-32",
+                         unit: 32,
+                         attrs: [("Scale", "32mm"), ("Material", "Resin"), ("Finish", "Primed")]),
                   ],
-                  total: 36, addr: euAddress("Sophie Martin", "12 rue de Rivoli", "Paris", "75004", "France")),
+                  total: 32, addr: euAddress("Sophie Martin", "12 rue de Rivoli", "Paris", "75004", "France")),
 
             order(id: "ord-8", number: "20240", date: daysAgo(2, hour: 10, minute: 4),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Marcus Williams", "m.williams@yahoo.com", "+1 213 555 4471"),
                   items: [
-                    item(name: "Single Origin Kenya Nyeri LIGHT ROAST",
-                         qty: 1, sku: "SO-KEN-NYR", unit: 26,
-                         attrs: [("Weight", "12oz"), ("Grind", "Whole bean"), ("Roast Level", "Light")]),
+                    item(name: "Frost Giant", qty: 1, sku: "GNT-FST-75",
+                         unit: 42,
+                         attrs: [("Scale", "75mm"), ("Material", "Resin"), ("Base", "Snow")]),
                   ],
-                  total: 26, addr: usAddress("Marcus Williams", "8420 Sunset Blvd", "Los Angeles", "CA", "90069")),
+                  total: 42, addr: usAddress("Marcus Williams", "8420 Sunset Blvd", "Los Angeles", "CA", "90069")),
 
             order(id: "ord-9", number: "20239", date: daysAgo(3, hour: 18, minute: 51),
                   paid: .paid, fulfilled: .notFulfilled,
                   customer: ("Laura Schneider", "l.schneider@web.de", "+49 89 5550 2244"),
                   items: [
-                    item(name: "Espresso Forte Blend DARK ROAST",
-                         qty: 4, sku: "BL-ESP-DARK", unit: 20,
-                         attrs: [("Weight", "12oz"), ("Grind", "Espresso fine")]),
+                    item(name: "Goblin Raider Pack", qty: 4, sku: "GOB-RDR-28",
+                         unit: 24,
+                         attrs: [("Scale", "28mm"), ("Material", "PLA+"), ("Finish", "Unpainted")]),
                   ],
-                  total: 80, addr: euAddress("Laura Schneider", "Maximilianstraße 24", "München", "80539", "Germany"),
-                  note: "Office order — please send invoice to billing@laurasdesign.de"),
+                  total: 96, addr: euAddress("Laura Schneider", "Maximilianstraße 24", "München", "80539", "Germany"),
+                  note: "Game club bulk order — invoice to billing@laurasdesign.de"),
 
             order(id: "ord-10", number: "20238", date: daysAgo(3, hour: 12, minute: 25),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Olivia Foster", "olivia.foster@gmail.com", "+1 503 555 6677"),
                   items: [
-                    item(name: "Signature House Blend MEDIUM ROAST",
-                         qty: 1, sku: "BL-HOUSE-MED", unit: 18,
-                         attrs: [("Weight", "12oz"), ("Grind", "Drip")]),
+                    item(name: "Wizard of the Tower", qty: 1, sku: "HRO-WIZ-32",
+                         unit: 22,
+                         attrs: [("Scale", "32mm"), ("Material", "Resin"), ("Finish", "Pre-supported")]),
                   ],
-                  total: 18, addr: usAddress("Olivia Foster", "1822 NW Glisan St", "Portland", "OR", "97209")),
+                  total: 22, addr: usAddress("Olivia Foster", "1822 NW Glisan St", "Portland", "OR", "97209")),
 
             // 4-5 days ago
             order(id: "ord-11", number: "20237", date: daysAgo(4, hour: 21, minute: 12),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Daniel Reyes", "d.reyes@gmail.com", "+1 786 555 1100"),
                   items: [
-                    item(name: "Single Origin Ethiopia Yirgacheffe LIGHT ROAST",
-                         qty: 2, sku: "SO-ETH-YIRG", unit: 22,
-                         attrs: [("Weight", "12oz"), ("Grind", "V60 / Pour-over"), ("Roast Level", "Light")]),
+                    item(name: "Ancient Red Dragon", qty: 1, sku: "DRG-RED-75",
+                         unit: 45,
+                         attrs: [("Scale", "75mm"), ("Material", "Resin"), ("Finish", "Unpainted")]),
                   ],
-                  total: 44, addr: usAddress("Daniel Reyes", "1500 Brickell Ave", "Miami", "FL", "33129")),
+                  total: 45, addr: usAddress("Daniel Reyes", "1500 Brickell Ave", "Miami", "FL", "33129")),
 
             order(id: "ord-12", number: "20236", date: daysAgo(4, hour: 15, minute: 47),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Charlotte Adams", "charlotte.adams@btinternet.com", "+44 161 555 7890"),
                   items: [
-                    item(name: "Reusable Cotton Filter (Pack of 2)",
-                         qty: 2, sku: "ACC-FILT-CT", unit: 14,
-                         attrs: [("Size", "Medium")]),
+                    item(name: "Magnetic Movement Tray", qty: 3, sku: "ACC-MAG-TRY",
+                         unit: 12,
+                         attrs: [("Size", "Large"), ("Color", "Black")]),
                   ],
-                  total: 28, addr: ukAddress("Charlotte Adams", "32 Deansgate", "Manchester", "M3 2RH")),
+                  total: 36, addr: ukAddress("Charlotte Adams", "32 Deansgate", "Manchester", "M3 2RH")),
 
             order(id: "ord-13", number: "20235", date: daysAgo(5, hour: 10, minute: 33),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Henry Thompson", "h.thompson@gmail.com", "+1 720 555 3344"),
                   items: [
-                    item(name: "Single Origin Colombia Huila MEDIUM ROAST",
-                         qty: 1, sku: "SO-COL-HUIL", unit: 19,
-                         attrs: [("Weight", "12oz"), ("Grind", "Whole bean"), ("Roast Level", "Medium")]),
-                    item(name: "Hand-thrown Espresso Cup Set",
-                         qty: 1, sku: "MUG-ESP-SET", unit: 48,
-                         attrs: [("Color", "Speckled cream"), ("Size", "Set of 2")]),
+                    item(name: "Ranger of the North", qty: 1, sku: "HRO-RNG-32",
+                         unit: 22,
+                         attrs: [("Scale", "32mm"), ("Material", "Resin"), ("Base", "Forest")]),
+                    item(name: "Forest Terrain Pack", qty: 1, sku: "TER-FRS-PCK",
+                         unit: 28,
+                         attrs: [("Scale", "32mm"), ("Material", "PLA+")]),
                   ],
-                  total: 67, addr: usAddress("Henry Thompson", "1500 Pearl Street", "Boulder", "CO", "80302")),
+                  total: 50, addr: usAddress("Henry Thompson", "1500 Pearl Street", "Boulder", "CO", "80302")),
 
             order(id: "ord-14", number: "20234", date: daysAgo(5, hour: 8, minute: 18),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Anaïs Dubois", "anais.dubois@laposte.net", "+33 4 9255 0782"),
                   items: [
-                    item(name: "Decaf Brazilian Cerrado MEDIUM ROAST",
-                         qty: 1, sku: "DC-BRA-CER", unit: 24,
-                         attrs: [("Weight", "12oz"), ("Grind", "French press"), ("Roast Level", "Medium")]),
+                    item(name: "Skeleton Warrior Squad", qty: 1, sku: "UND-SKL-32",
+                         unit: 18,
+                         attrs: [("Scale", "32mm"), ("Material", "PLA+"), ("Finish", "Primed")]),
                   ],
-                  total: 24, addr: euAddress("Anaïs Dubois", "47 Cours Mirabeau", "Aix-en-Provence", "13100", "France")),
+                  total: 18, addr: euAddress("Anaïs Dubois", "47 Cours Mirabeau", "Aix-en-Provence", "13100", "France")),
 
             // 6-8 days ago
             order(id: "ord-15", number: "20233", date: daysAgo(6, hour: 17, minute: 22),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Robert Patel", "robert.patel@outlook.com", "+1 425 555 8821"),
                   items: [
-                    item(name: "Subscription · Roaster's Choice 3-Month",
-                         qty: 1, sku: "SUB-RC-3MO", unit: 165,
-                         attrs: [("Tier", "Roaster's Choice"), ("Frequency", "Monthly · 3 months"), ("Bag size", "12oz")]),
+                    item(name: "Patreon · Hero Bundle (March)", qty: 1, sku: "SUB-HRO-MAR",
+                         unit: 35,
+                         attrs: [("Tier", "Hero"), ("Scale", "32mm"), ("Material", "Resin")]),
                   ],
-                  total: 165, addr: usAddress("Robert Patel", "550 106th Ave NE", "Bellevue", "WA", "98004")),
+                  total: 35, addr: usAddress("Robert Patel", "550 106th Ave NE", "Bellevue", "WA", "98004")),
 
             order(id: "ord-16", number: "20232", date: daysAgo(7, hour: 13, minute: 8),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Isabella Rossi", "isabella.rossi@libero.it", "+39 02 5550 4477"),
                   items: [
-                    item(name: "Espresso Forte Blend DARK ROAST",
-                         qty: 6, sku: "BL-ESP-DARK", unit: 20,
-                         attrs: [("Weight", "12oz"), ("Grind", "Espresso fine")]),
+                    item(name: "Dwarven Forge Set", qty: 2, sku: "DWF-SET-32",
+                         unit: 65,
+                         attrs: [("Scale", "32mm"), ("Material", "Resin"), ("Finish", "Pre-supported")]),
                   ],
-                  total: 120, addr: euAddress("Isabella Rossi", "Via Brera 28", "Milano", "20121", "Italy"),
+                  total: 130, addr: euAddress("Isabella Rossi", "Via Brera 28", "Milano", "20121", "Italy"),
                   note: "Wholesale account — bulk pricing applied"),
 
             order(id: "ord-17", number: "20231", date: daysAgo(7, hour: 9, minute: 55),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("William Carter", "w.carter@gmail.com", "+1 678 555 1199"),
                   items: [
-                    item(name: "Single Origin Kenya Nyeri LIGHT ROAST",
-                         qty: 2, sku: "SO-KEN-NYR", unit: 26,
-                         attrs: [("Weight", "1lb"), ("Grind", "Whole bean"), ("Roast Level", "Light")]),
+                    item(name: "Frost Giant", qty: 2, sku: "GNT-FST-75",
+                         unit: 42,
+                         attrs: [("Scale", "75mm"), ("Material", "Resin"), ("Base", "Snow")]),
                   ],
-                  total: 52, addr: usAddress("William Carter", "1280 Peachtree St NE", "Atlanta", "GA", "30309")),
+                  total: 84, addr: usAddress("William Carter", "1280 Peachtree St NE", "Atlanta", "GA", "30309")),
 
             order(id: "ord-18", number: "20230", date: daysAgo(8, hour: 16, minute: 4),
                   paid: .paid, fulfilled: .fulfilled,
                   customer: ("Grace Bennett", "grace.bennett@me.com", "+1 206 555 0099"),
                   items: [
-                    item(name: "Cold Brew Concentrate Pack DARK ROAST",
-                         qty: 1, sku: "CB-PACK-DK", unit: 28,
-                         attrs: [("Weight", "1lb"), ("Grind", "Coarse"), ("Roast Level", "Dark")]),
+                    item(name: "Wizard of the Tower", qty: 1, sku: "HRO-WIZ-32",
+                         unit: 22,
+                         attrs: [("Scale", "32mm"), ("Material", "Resin"), ("Finish", "Pre-supported")]),
                   ],
-                  total: 28, addr: usAddress("Grace Bennett", "2100 Westlake Ave N", "Seattle", "WA", "98109")),
+                  total: 22, addr: usAddress("Grace Bennett", "2100 Westlake Ave N", "Seattle", "WA", "98109")),
         ]
 
         let summary = Analytics.summarize(orders: orders, fallbackCurrency: "USD")

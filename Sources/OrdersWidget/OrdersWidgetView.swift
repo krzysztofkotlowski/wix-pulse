@@ -15,7 +15,7 @@ struct OrdersWidgetView: View {
                 case .systemSmall: SmallView(entry: entry)
                 case .systemMedium: MediumView(entry: entry)
                 case .systemLarge: LargeView(entry: entry, maxOrders: 3)
-                case .systemExtraLarge: LargeView(entry: entry, maxOrders: 5)
+                case .systemExtraLarge: LargeView(entry: entry, maxOrders: 4)
                 default: MediumView(entry: entry)
                 }
             }
@@ -33,8 +33,12 @@ private struct WidgetEyebrow: View {
             Image(systemName: icon)
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(Color.wpAccent)
-                .font(.system(size: 11, weight: .semibold))
-            Text(title).wpEyebrowStyle()
+                .font(.system(size: 12, weight: .bold))
+            Text(title)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
             Spacer(minLength: 4)
             if let chip { chip }
         }
