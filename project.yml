@@ -26,6 +26,11 @@ targets:
     platform: macOS
     sources:
       - path: Sources/WixPulseApp
+        excludes:
+          - "AppIcon.icon"
+      - path: Sources/WixPulseApp/AppIcon.icon
+        type: file
+        buildPhase: resources
     dependencies:
       - package: WixPulseCore
       - target: OrdersWidget
@@ -50,6 +55,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.kkotlowski.wixpulse
         CODE_SIGN_ENTITLEMENTS: Sources/WixPulseApp/WixPulse.entitlements
         ENABLE_PREVIEWS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   OrdersWidget:
     type: app-extension
