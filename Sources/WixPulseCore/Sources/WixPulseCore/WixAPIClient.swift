@@ -209,19 +209,61 @@ private struct APIOrder: Decodable {
         let productName: ProductName?
         let catalogReference: CatalogReference?
         let price: PriceAmount?
+        let priceBeforeDiscounts: PriceAmount?
         let totalPriceAfterTax: PriceAmount?
+        let totalPriceBeforeTax: PriceAmount?
         let physicalProperties: PhysicalProperties?
         let descriptionLines: [DescriptionLine]?
         let image: FlexibleString?
+        let itemType: ItemType?
+        let url: FlexibleString?
+
         struct ProductName: Decodable { let original: String?; let translated: String? }
-        struct CatalogReference: Decodable { let catalogItemId: String? }
-        struct PhysicalProperties: Decodable { let sku: String? }
+        struct CatalogReference: Decodable {
+            let catalogItemId: String?
+            let appId: String?
+            let options: [String: AnyCodableValue]?
+        }
+        struct PhysicalProperties: Decodable {
+            let sku: String?
+            let weight: FlexibleNumber?
+            let shippable: Bool?
+        }
+        struct ItemType: Decodable {
+            let preset: String?      // PHYSICAL, DIGITAL, GIFT_CARD, SERVICE, SUBSCRIPTION
+            let custom: String?
+        }
+        /// Captures every shape of WIX descriptionLine — not just plainText/colorInfo.
+        /// Tries every known value field and falls back to anything string-like in
+        /// the line. This way new WIX schema additions surface as attributes too.
         struct DescriptionLine: Decodable {
             let name: LocalizedString?
             let plainText: LocalizedString?
             let colorInfo: ColorInfo?
+            let lineType: String?
+
             struct LocalizedString: Decodable { let original: String?; let translated: String? }
-            struct ColorInfo: Decodable { let original: String?; let translated: String? }
+            struct ColorInfo: Decodable {
+                let original: String?
+                let translated: String?
+                let code: String?
+            }
+
+            /// First non-empty value across every known field, in priority order.
+            var resolvedValue: String? {
+                clean(plainText?.translated)
+                    ?? clean(plainText?.original)
+                    ?? clean(colorInfo?.translated)
+                    ?? clean(colorInfo?.original)
+                    ?? clean(colorInfo?.code)
+            }
+
+            private func clean(_ s: String?) -> String? {
+                guard let s = s?.trimmingCharacters(in: .whitespaces), !s.isEmpty else { return nil }
+                let lower = s.lowercased()
+                if lower == "undefined" || lower == "null" || lower == "nan" { return nil }
+                return s
+            }
         }
     }
     struct BuyerInfo: Decodable {
@@ -279,19 +321,26 @@ private struct APIOrder: Decodable {
                 ?? clean(li.productName?.original)
                 ?? "Item"
             let pid = clean(li.catalogReference?.catalogItemId) ?? name
-            let unitAmt = li.price?.amount.flatMap { Decimal(string: $0) }
-            let lineAmt = li.totalPriceAfterTax?.amount.flatMap { Decimal(string: $0) }
-            let lineCurrency = clean(li.price?.currency) ?? clean(li.totalPriceAfterTax?.currency) ?? rawCurrency
+            // Try every known WIX price field — ecom / subscription / digital
+            // products report prices under different keys depending on the
+            // product type. Fall through until we find a usable Decimal.
+            let unitAmt = (li.price?.amount).flatMap { Decimal(string: $0) }
+                ?? (li.priceBeforeDiscounts?.amount).flatMap { Decimal(string: $0) }
+            let lineAmt = (li.totalPriceAfterTax?.amount).flatMap { Decimal(string: $0) }
+                ?? (li.totalPriceBeforeTax?.amount).flatMap { Decimal(string: $0) }
+                ?? unitAmt.map { $0 * Decimal(li.quantity ?? 1) }
+            let lineCurrency = clean(li.price?.currency)
+                ?? clean(li.priceBeforeDiscounts?.currency)
+                ?? clean(li.totalPriceAfterTax?.currency)
+                ?? clean(li.totalPriceBeforeTax?.currency)
+                ?? rawCurrency
+            // Capture every descriptionLine regardless of its lineType — we
+            // try plainText, colorInfo, and any new WIX value fields. Strip
+            // trailing colons from labels so "Size:" renders as "Size".
             let attributes: [WixOrder.Attribute] = (li.descriptionLines ?? []).compactMap { line in
-                // Strip trailing colons that some shops put in the label name,
-                // so "Ilość wejść:" doesn't render as "Ilość wejść:: value".
                 let rawLabel = clean(line.name?.translated) ?? clean(line.name?.original)
                 let label = rawLabel?.trimmingCharacters(in: CharacterSet(charactersIn: ": ").union(.whitespaces))
-                let value = clean(line.plainText?.translated)
-                    ?? clean(line.plainText?.original)
-                    ?? clean(line.colorInfo?.translated)
-                    ?? clean(line.colorInfo?.original)
-                guard let label, !label.isEmpty, let value else { return nil }
+                guard let label, !label.isEmpty, let value = line.resolvedValue else { return nil }
                 return WixOrder.Attribute(label: label, value: value)
             }
             let variant: String? = attributes.isEmpty
