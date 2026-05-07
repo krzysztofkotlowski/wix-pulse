@@ -25,10 +25,38 @@ struct AnalyticsView: View {
 
                 if let traffic = store.snapshot?.traffic {
                     trafficSection(traffic: traffic)
+                } else {
+                    trafficUnavailableCard
                 }
             }
             .padding(WP.Spacing.xl)
         }
+    }
+
+    private var trafficUnavailableCard: some View {
+        HStack(alignment: .top, spacing: WP.Spacing.md) {
+            Image(systemName: "person.2.slash")
+                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(Color.wpAccent)
+                .frame(width: 32)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Site traffic unavailable")
+                    .font(.system(.callout, weight: .semibold))
+                Text("Add the 'Read Site Analytics' permission to your Wix API key to see sessions and unique visitors here and on the widget. Settings → API Keys → edit → enable Site Analytics → regenerate → paste the new key in WixPulse Settings.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Link(destination: URL(string: "https://manage.wix.com/account/api-keys")!) {
+                    Label("Open Wix API Keys", systemImage: "arrow.up.right.square")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.wpAccent)
+                }
+                .padding(.top, 2)
+            }
+            Spacer()
+        }
+        .wpCard()
     }
 
     @ViewBuilder

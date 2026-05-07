@@ -1,4 +1,5 @@
 import Foundation
+import os.log
 
 public struct WixCredentials: Equatable, Sendable {
     public let apiKey: String
@@ -100,10 +101,18 @@ public final class WixAPIClient: WixAPIClientProtocol, @unchecked Sendable {
     /// Best-effort fetch of site traffic (sessions + unique visitors) for the
     /// last 30 days. Returns `nil` if the API key lacks Analytics permission
     /// or anything else fails — callers should treat traffic as optional and
-    /// keep going.
+    /// keep going. Errors are logged via os_log so the developer can debug
+    /// missing scopes without breaking the orders flow.
     public func fetchSiteTraffic() async -> SiteTraffic? {
-        guard let data = try? await fetchAnalyticsData(measurements: ["TOTAL_SESSIONS", "UNIQUE_VISITORS"], lastDays: 30)
-        else { return nil }
+        let data: [AnalyticsMeasurement]
+        do {
+            data = try await fetchAnalyticsData(measurements: ["TOTAL_SESSIONS", "UNIQUE_VISITORS"], lastDays: 30)
+        } catch {
+            // Keep this around for the next debug cycle — the user will see it
+            // in Console.app filtered by subsystem `wixpulse.analytics`.
+            os_log("WixPulse analytics fetch failed: %{public}@", error.localizedDescription)
+            return nil
+        }
 
         let sessions = data.first(where: { $0.type.uppercased().contains("SESSION") })
         let visitors = data.first(where: { $0.type.uppercased().contains("VISITOR") })

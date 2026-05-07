@@ -102,10 +102,46 @@ private struct MediumView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 6) {
+                if let traffic = entry.traffic {
+                    // Traffic stats — sessions today + visitors today + 30d sessions
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Traffic today").wpEyebrowStyle()
+                        HStack(spacing: 10) {
+                            traffic_stat(label: "Sessions", value: traffic.sessionsToday, icon: "wave.3.right")
+                            traffic_stat(label: "Visitors", value: traffic.uniqueVisitorsToday, icon: "person.crop.circle.fill")
+                        }
+                        Text("\(traffic.sessions30Days) sessions · \(traffic.uniqueVisitors30Days) visitors · 30d")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
                 Text("Last 7 days").wpEyebrowStyle()
                 RevenueBars(data: entry.summary.dailyRevenue)
             }
             .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func traffic_stat(label: String, value: Int, icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 3) {
+                Image(systemName: icon)
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.wpAccent)
+                Text(label.uppercased())
+                    .font(.system(size: 8, weight: .bold))
+                    .tracking(0.4)
+                    .foregroundStyle(.secondary)
+            }
+            Text("\(value)")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(Color.wpAccent)
+                .widgetAccentable(true)
         }
     }
 }

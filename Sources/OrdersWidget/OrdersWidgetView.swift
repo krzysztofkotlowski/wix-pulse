@@ -271,20 +271,23 @@ private struct ProductionItemRow: View {
         let parsed = ProductNameParser.parse(name: item.name, apiVariant: nil)
 
         return HStack(alignment: .top, spacing: 6) {
-            // Quantity pill — fixed-size, no frame after background.
-            // Marked accentable so it keeps accent tint in macOS Tahoe's
-            // tinted-widget mode (otherwise it'd render monochrome white).
+            // Quantity pill — background gets the tint in macOS Tahoe's
+            // tinted-widget mode (widgetAccentable applied to the background
+            // shape only), but the white digit stays white so it's still
+            // legible. A subtle dark shadow gives it edge contrast on light
+            // backgrounds.
             Text("×\(item.quantity)")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(Color.white)
+                .shadow(color: .black.opacity(0.25), radius: 0.5, x: 0, y: 0.5)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .fill(Color.wpAccent)
+                        .widgetAccentable(true)
                 )
-                .widgetAccentable(true)
 
             VStack(alignment: .leading, spacing: 1) {
                 // Top: variant (color) + model + SKU all on one line
@@ -507,16 +510,21 @@ private struct OrderCardRow: View {
     }
 
     private var qtyBadge: some View {
+        // Background is accentable (keeps tint in monochrome mode), text is
+        // NOT accentable (stays white) so the count stays readable in macOS
+        // Tahoe's tinted-widget rendering. Otherwise both would converge to
+        // a single tint and the digit would disappear.
         ZStack {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.wpAccent.gradient)
                 .frame(width: 26, height: 26)
+                .widgetAccentable(true)
             Text("×\(order.itemCount)")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(Color.white)
+                .shadow(color: .black.opacity(0.25), radius: 0.5, x: 0, y: 0.5)
         }
-        .widgetAccentable(true)
     }
 
     @ViewBuilder
