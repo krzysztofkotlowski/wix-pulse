@@ -32,6 +32,7 @@ public enum WixAPIError: LocalizedError {
 
 public protocol WixAPIClientProtocol: Sendable {
     func fetchOrders(limit: Int, since: Date?) async throws -> [WixOrder]
+    func fetchSiteTraffic() async -> SiteTraffic?
 }
 
 public final class WixAPIClient: WixAPIClientProtocol, @unchecked Sendable {
@@ -94,6 +95,100 @@ public final class WixAPIClient: WixAPIClientProtocol, @unchecked Sendable {
         } catch {
             throw WixAPIError.decoding(error)
         }
+    }
+
+    /// Best-effort fetch of site traffic (sessions + unique visitors) for the
+    /// last 30 days. Returns `nil` if the API key lacks Analytics permission
+    /// or anything else fails — callers should treat traffic as optional and
+    /// keep going.
+    public func fetchSiteTraffic() async -> SiteTraffic? {
+        guard let data = try? await fetchAnalyticsData(measurements: ["TOTAL_SESSIONS", "UNIQUE_VISITORS"], lastDays: 30)
+        else { return nil }
+
+        let sessions = data.first(where: { $0.type.uppercased().contains("SESSION") })
+        let visitors = data.first(where: { $0.type.uppercased().contains("VISITOR") })
+
+        let cal = Calendar.current
+        let startOfToday = cal.startOfDay(for: Date())
+
+        func daily(_ entry: AnalyticsMeasurement?) -> [SiteTraffic.DailyMetric] {
+            (entry?.values ?? []).compactMap { v in
+                guard let d = v.parsedDate else { return nil }
+                return SiteTraffic.DailyMetric(date: d, value: v.intValue)
+            }
+        }
+        func todayValue(_ entry: AnalyticsMeasurement?) -> Int {
+            (entry?.values ?? []).first(where: { v in
+                guard let d = v.parsedDate else { return false }
+                return cal.isDate(d, inSameDayAs: startOfToday)
+            })?.intValue ?? 0
+        }
+        let totalSessions = sessions?.totalInt ?? daily(sessions).reduce(0) { $0 + $1.value }
+        let totalVisitors = visitors?.totalInt ?? daily(visitors).reduce(0) { $0 + $1.value }
+
+        return SiteTraffic(
+            sessionsToday: todayValue(sessions),
+            sessions30Days: totalSessions,
+            uniqueVisitorsToday: todayValue(visitors),
+            uniqueVisitors30Days: totalVisitors,
+            dailySessions: daily(sessions),
+            dailyUniqueVisitors: daily(visitors),
+            updatedAt: Date()
+        )
+    }
+
+    private func fetchAnalyticsData(measurements: [String], lastDays: Int) async throws -> [AnalyticsMeasurement] {
+        var request = URLRequest(url: baseURL.appendingPathComponent("analytics-data/v2/site-analytics-data"))
+        request.httpMethod = "POST"
+        request.setValue(credentials.apiKey, forHTTPHeaderField: "Authorization")
+        request.setValue(credentials.siteId, forHTTPHeaderField: "wix-site-id")
+        if let accountId = credentials.accountId {
+            request.setValue(accountId, forHTTPHeaderField: "wix-account-id")
+        }
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "measurementTypes": measurements,
+            "dateRange": "LAST_30_DAYS"
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw WixAPIError.invalidResponse
+        }
+        let envelope = try JSONDecoder.wix.decode(AnalyticsEnvelope.self, from: data)
+        return envelope.data ?? []
+    }
+}
+
+private struct AnalyticsEnvelope: Decodable {
+    let data: [AnalyticsMeasurement]?
+}
+
+private struct AnalyticsMeasurement: Decodable {
+    let type: String
+    let total: FlexibleNumber?
+    let values: [Value]?
+
+    var totalInt: Int? { total?.value.map { Int($0) } }
+
+    struct Value: Decodable {
+        let date: String?
+        let value: FlexibleNumber?
+
+        var parsedDate: Date? {
+            guard let s = date else { return nil }
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withFullDate]
+            if let d = f.date(from: s) { return d }
+            // Fallback: yyyy-MM-dd
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd"
+            df.timeZone = TimeZone(secondsFromGMT: 0)
+            return df.date(from: s)
+        }
+        var intValue: Int { value?.value.map { Int($0) } ?? 0 }
     }
 }
 

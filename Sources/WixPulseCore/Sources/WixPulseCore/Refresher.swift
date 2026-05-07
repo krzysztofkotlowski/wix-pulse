@@ -22,9 +22,17 @@ public actor Refresher {
         }
         let creds = WixCredentials(apiKey: apiKey, siteId: siteId, accountId: SharedStorage.shared.accountId)
         let client = WixAPIClient(credentials: creds)
-        let orders = try await client.fetchOrders(limit: 100, since: Calendar.current.date(byAdding: .day, value: -30, to: Date()))
+
+        // Fetch orders + traffic in parallel. Traffic is best-effort and
+        // returns nil if the API key lacks Analytics permission, so it can
+        // never fail the whole refresh.
+        async let ordersTask = client.fetchOrders(limit: 100, since: Calendar.current.date(byAdding: .day, value: -30, to: Date()))
+        async let trafficTask = client.fetchSiteTraffic()
+        let orders = try await ordersTask
+        let traffic = await trafficTask
+
         let summary = Analytics.summarize(orders: orders)
-        let snapshot = CachedSnapshot(orders: orders, summary: summary)
+        let snapshot = CachedSnapshot(orders: orders, summary: summary, traffic: traffic)
         SharedStorage.shared.saveSnapshot(snapshot)
         #if canImport(WidgetKit)
         WidgetCenter.shared.reloadAllTimelines()

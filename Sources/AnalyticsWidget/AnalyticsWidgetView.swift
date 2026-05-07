@@ -135,17 +135,53 @@ private struct LargeView: View {
                     tinted: false
                 )
             }
+            if let traffic = entry.traffic {
+                HStack(spacing: 8) {
+                    TrafficTile(label: "Sessions today", value: traffic.sessionsToday, icon: "wave.3.right")
+                    TrafficTile(label: "Visitors today", value: traffic.uniqueVisitorsToday, icon: "person.crop.circle.fill")
+                    TrafficTile(label: "30d sessions", value: traffic.sessions30Days, icon: "person.2.fill")
+                }
+            }
             HStack {
                 Text("Revenue · last 7 days").wpEyebrowStyle()
                 Spacer()
             }
             RevenueBars(data: entry.summary.dailyRevenue, showAxis: true)
-                .frame(minHeight: 120)
+                .frame(minHeight: 100)
             Spacer(minLength: 0)
             Text("Updated \(entry.summary.updatedAt.formatted(.relative(presentation: .numeric)))")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.tertiary)
         }
+    }
+}
+
+private struct TrafficTile: View {
+    let label: String
+    let value: Int
+    let icon: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Color.wpAccent)
+                Text(label.uppercased())
+                    .font(.system(size: 8, weight: .bold))
+                    .tracking(0.4)
+                    .foregroundStyle(.secondary)
+            }
+            Text("\(value)")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(Color.wpAccent)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: WP.Radius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: WP.Radius.md, style: .continuous).strokeBorder(Color.wpHairline, lineWidth: 0.5))
     }
 }
 
@@ -268,5 +304,5 @@ private struct WidgetEmptyState: View {
 #Preview(as: .systemMedium) {
     AnalyticsWidget()
 } timeline: {
-    AnalyticsEntry(date: .now, summary: .placeholder, isFiltered: false, isPlaceholder: false)
+    AnalyticsEntry(date: .now, summary: .placeholder, traffic: nil, isFiltered: false, isPlaceholder: false)
 }

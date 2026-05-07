@@ -22,8 +22,60 @@ struct AnalyticsView: View {
 
                 revenueChart
                 orderCountChart
+
+                if let traffic = store.snapshot?.traffic {
+                    trafficSection(traffic: traffic)
+                }
             }
             .padding(WP.Spacing.xl)
+        }
+    }
+
+    @ViewBuilder
+    private func trafficSection(traffic: SiteTraffic) -> some View {
+        VStack(alignment: .leading, spacing: WP.Spacing.md) {
+            WPSectionHeader(icon: "person.2.fill", title: "Site traffic")
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: WP.Spacing.md)], spacing: WP.Spacing.md) {
+                WPMetricCard(eyebrow: "Today · sessions",
+                             value: "\(traffic.sessionsToday)",
+                             caption: pace(today: traffic.sessionsToday, daily: traffic.dailySessions.map(\.value)),
+                             icon: "wave.3.right",
+                             tint: .wpAccent)
+                WPMetricCard(eyebrow: "30 days · sessions",
+                             value: "\(traffic.sessions30Days)",
+                             caption: nil,
+                             icon: "person.2.wave.2.fill",
+                             tint: .wpPositive)
+                WPMetricCard(eyebrow: "Today · visitors",
+                             value: "\(traffic.uniqueVisitorsToday)",
+                             caption: pace(today: traffic.uniqueVisitorsToday, daily: traffic.dailyUniqueVisitors.map(\.value)),
+                             icon: "person.crop.circle.fill",
+                             tint: .wpAccent)
+                WPMetricCard(eyebrow: "30 days · visitors",
+                             value: "\(traffic.uniqueVisitors30Days)",
+                             caption: "unique",
+                             icon: "person.3.fill",
+                             tint: .wpWarning)
+            }
+
+            if traffic.dailySessions.count > 1 {
+                VStack(alignment: .leading, spacing: WP.Spacing.sm) {
+                    WPSectionHeader(icon: "chart.line.uptrend.xyaxis", title: "Sessions · last 30 days")
+                    Chart(traffic.dailySessions) { d in
+                        AreaMark(x: .value("Day", d.date, unit: .day),
+                                 y: .value("Sessions", d.value))
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(LinearGradient(colors: [Color.wpAccent.opacity(0.4), Color.wpAccent.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                        LineMark(x: .value("Day", d.date, unit: .day),
+                                 y: .value("Sessions", d.value))
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(Color.wpAccent)
+                            .lineStyle(.init(lineWidth: 2))
+                    }
+                    .frame(height: 180)
+                }
+                .wpCard()
+            }
         }
     }
 
