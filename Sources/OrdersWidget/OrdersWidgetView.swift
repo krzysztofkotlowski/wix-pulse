@@ -15,7 +15,7 @@ struct OrdersWidgetView: View {
                 case .systemSmall: SmallView(entry: entry)
                 case .systemMedium: MediumView(entry: entry)
                 case .systemLarge: LargeView(entry: entry, maxOrders: 3)
-                case .systemExtraLarge: LargeView(entry: entry, maxOrders: 5)
+                case .systemExtraLarge: LargeView(entry: entry, maxOrders: 4)
                 default: MediumView(entry: entry)
                 }
             }
@@ -30,14 +30,30 @@ private struct WidgetEyebrow: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color.wpAccent)
-                .font(.system(size: 11, weight: .semibold))
-            Text(title).wpEyebrowStyle()
+            // Title pill — bold, high-contrast, accent-tinted background so
+            // it's unmissable at every widget size and survives macOS Tahoe's
+            // "Tinted widget" rendering mode.
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 11, weight: .bold))
+                Text(title.uppercased())
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .tracking(0.6)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .foregroundStyle(Color.wpAccent)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color.wpAccent.opacity(0.16), in: Capsule())
+            .overlay(Capsule().strokeBorder(Color.wpAccent.opacity(0.35), lineWidth: 0.5))
+            .widgetAccentable(true)
+
             Spacer(minLength: 4)
-            if let chip { chip }
+            if let chip { chip.widgetAccentable(true) }
         }
+        .padding(.bottom, 1)
     }
 }
 
@@ -255,7 +271,9 @@ private struct ProductionItemRow: View {
         let parsed = ProductNameParser.parse(name: item.name, apiVariant: nil)
 
         return HStack(alignment: .top, spacing: 6) {
-            // Quantity pill — fixed-size, no frame after background
+            // Quantity pill — fixed-size, no frame after background.
+            // Marked accentable so it keeps accent tint in macOS Tahoe's
+            // tinted-widget mode (otherwise it'd render monochrome white).
             Text("×\(item.quantity)")
                 .font(.system(size: 10, weight: .heavy, design: .rounded))
                 .monospacedDigit()
@@ -266,6 +284,7 @@ private struct ProductionItemRow: View {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .fill(Color.wpAccent)
                 )
+                .widgetAccentable(true)
 
             VStack(alignment: .leading, spacing: 1) {
                 // Top: variant (color) + model + SKU all on one line
@@ -497,6 +516,7 @@ private struct OrderCardRow: View {
                 .monospacedDigit()
                 .foregroundStyle(Color.white)
         }
+        .widgetAccentable(true)
     }
 
     @ViewBuilder
