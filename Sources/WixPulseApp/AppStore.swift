@@ -1,0 +1,122 @@
+import Foundation
+import WixPulseCore
+
+@MainActor
+final class AppStore: ObservableObject {
+    @Published var snapshot: CachedSnapshot?
+    @Published var isRefreshing = false
+    @Published var lastError: String?
+    @Published var hasCredentials: Bool = false
+    @Published var productFilter: ProductFilter = .none
+    @Published var printedOrderIds: Set<String> = []
+
+    /// Background refresh loop. Cancelled when interval changes or credentials clear.
+    private var autoRefreshTask: Task<Void, Never>?
+
+    func bootstrap() async {
+        snapshot = SharedStorage.shared.loadSnapshot()
+        productFilter = SharedStorage.shared.productFilter
+        printedOrderIds = SharedStorage.shared.printedOrderIds
+        hasCredentials = Keychain.loadAPIKey() != nil && (SharedStorage.shared.siteId?.isEmpty == false)
+        if hasCredentials {
+            await refresh()
+            startAutoRefresh()
+        }
+    }
+
+    /// Starts a Task loop that periodically calls `refresh()` at the user's
+    /// configured `SharedStorage.refreshIntervalMinutes`. Idempotent — calling
+    /// it again cancels the previous loop and starts a new one (used when the
+    /// interval changes in Settings).
+    func startAutoRefresh() {
+        autoRefreshTask?.cancel()
+        autoRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                let minutes = max(1, SharedStorage.shared.refreshIntervalMinutes)
+                let nanos = UInt64(minutes) * 60 * 1_000_000_000
+                try? await Task.sleep(nanoseconds: nanos)
+                if Task.isCancelled { return }
+                guard let self else { return }
+                let stillConnected = await MainActor.run { self.hasCredentials }
+                guard stillConnected else { return }
+                await self.refresh()
+            }
+        }
+    }
+
+    func stopAutoRefresh() {
+        autoRefreshTask?.cancel()
+        autoRefreshTask = nil
+    }
+
+    func togglePrinted(_ orderId: String) {
+        if printedOrderIds.contains(orderId) {
+            printedOrderIds.remove(orderId)
+            SharedStorage.shared.unmarkPrinted(orderId)
+        } else {
+            printedOrderIds.insert(orderId)
+            SharedStorage.shared.markPrinted(orderId)
+        }
+        Task { await Refresher.shared.notifyWidgets() }
+    }
+
+    func isPrinted(_ orderId: String) -> Bool {
+        printedOrderIds.contains(orderId)
+    }
+
+    /// Pending (not-printed) orders, sorted oldest-first — what the widget queue uses.
+    var pendingOrders: [WixOrder] {
+        filteredOrders
+            .filter { !printedOrderIds.contains($0.id) }
+            .sorted { $0.createdDate < $1.createdDate }
+    }
+
+    func refresh() async {
+        isRefreshing = true
+        defer { isRefreshing = false }
+        do {
+            let fresh = try await Refresher.shared.refresh()
+            snapshot = fresh
+            lastError = nil
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
+    func saveCredentials(apiKey: String?, siteId: String, accountId: String?) {
+        if let apiKey, !apiKey.isEmpty {
+            Keychain.saveAPIKey(apiKey)
+        }
+        SharedStorage.shared.siteId = siteId
+        SharedStorage.shared.accountId = accountId?.isEmpty == true ? nil : accountId
+        hasCredentials = (Keychain.loadAPIKey()?.isEmpty == false) && !siteId.isEmpty
+        if hasCredentials {
+            startAutoRefresh()
+        } else {
+            stopAutoRefresh()
+        }
+    }
+
+    func clearCredentials() {
+        Keychain.deleteAPIKey()
+        SharedStorage.shared.siteId = nil
+        SharedStorage.shared.accountId = nil
+        hasCredentials = false
+        snapshot = nil
+        stopAutoRefresh()
+    }
+
+    func updateFilter(_ new: ProductFilter) {
+        productFilter = new
+        SharedStorage.shared.productFilter = new
+        Task { await Refresher.shared.notifyWidgets() }
+    }
+
+    var availableProducts: [ProductInfo] {
+        ProductCatalog.discover(in: snapshot?.orders ?? [])
+    }
+
+    var filteredOrders: [WixOrder] {
+        productFilter.apply(to: snapshot?.orders ?? [])
+    }
+}

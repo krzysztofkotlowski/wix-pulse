@@ -1,0 +1,108 @@
+name: WixPulse
+options:
+  bundleIdPrefix: com.kkotlowski.wixpulse
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.9"
+    ENABLE_HARDENED_RUNTIME: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+packages:
+  WixPulseCore:
+    path: Sources/WixPulseCore
+
+targets:
+  WixPulse:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/WixPulseApp
+    dependencies:
+      - package: WixPulseCore
+      - target: OrdersWidget
+      - target: AnalyticsWidget
+    info:
+      path: Sources/WixPulseApp/Info.plist
+      properties:
+        CFBundleDisplayName: WixPulse
+        LSUIElement: false
+        NSHumanReadableCopyright: "© 2026 Krzysztof Kotlowski. MIT License."
+    entitlements:
+      path: Sources/WixPulseApp/WixPulse.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - group.com.kkotlowski.wixpulse
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.kkotlowski.wixpulse
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kkotlowski.wixpulse
+        CODE_SIGN_ENTITLEMENTS: Sources/WixPulseApp/WixPulse.entitlements
+        ENABLE_PREVIEWS: YES
+
+  OrdersWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Sources/OrdersWidget
+    dependencies:
+      - package: WixPulseCore
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    info:
+      path: Sources/OrdersWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Orders
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Sources/OrdersWidget/OrdersWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - group.com.kkotlowski.wixpulse
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kkotlowski.wixpulse.OrdersWidget
+        CODE_SIGN_ENTITLEMENTS: Sources/OrdersWidget/OrdersWidget.entitlements
+        ENABLE_PREVIEWS: YES
+
+  AnalyticsWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Sources/AnalyticsWidget
+    dependencies:
+      - package: WixPulseCore
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    info:
+      path: Sources/AnalyticsWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Analytics
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Sources/AnalyticsWidget/AnalyticsWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - group.com.kkotlowski.wixpulse
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kkotlowski.wixpulse.AnalyticsWidget
+        CODE_SIGN_ENTITLEMENTS: Sources/AnalyticsWidget/AnalyticsWidget.entitlements
+        ENABLE_PREVIEWS: YES
