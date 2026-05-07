@@ -23,10 +23,12 @@ A native macOS app and desktop widgets that turn a [Wix](https://www.wix.com/) s
     <td align="center"><b>Analytics</b> — today's revenue hero, 30-day metrics, and a 7-day Swift Charts breakdown.</td>
   </tr>
   <tr>
-    <td colspan="2"><img src="screenshots/04-settings.png" alt="Settings view — API key, refresh interval, product filter" /></td>
+    <td width="50%"><img src="screenshots/05-order-detail.png" alt="Expanded order detail — items, customer, ship-to, pricing" /></td>
+    <td width="50%"><img src="screenshots/04-settings.png" alt="Settings view — API key, refresh interval, product filter" /></td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><b>Settings</b> — API key stored in Keychain, refresh interval, and a product filter that scopes both app and widgets to the SKUs you care about.</td>
+    <td align="center"><b>Order detail</b> — every order expands into a full fulfillment slip: line items with × qty / SKU / variant attributes, customer block with copy-to-clipboard email and phone, shipping label, and a receipt-style pricing breakdown.</td>
+    <td align="center"><b>Settings</b> — API key stored in Keychain, refresh interval, and a product filter that scopes both app and widgets to the SKUs you care about.</td>
   </tr>
 </table>
 
