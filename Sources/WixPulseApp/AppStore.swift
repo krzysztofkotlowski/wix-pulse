@@ -14,14 +14,15 @@ final class AppStore: ObservableObject {
     private var autoRefreshTask: Task<Void, Never>?
 
     func bootstrap() async {
-        snapshot = SharedStorage.shared.loadSnapshot()
+        // SCREENSHOTS-MOCK BRANCH ONLY — load seed data and skip the network.
+        // Reverted to real WIX API on the `main` branch.
+        snapshot = MockData.snapshot
+        SharedStorage.shared.saveSnapshot(MockData.snapshot)
+        printedOrderIds = MockData.printedOrderIds
+        for id in MockData.printedOrderIds { SharedStorage.shared.markPrinted(id) }
         productFilter = SharedStorage.shared.productFilter
-        printedOrderIds = SharedStorage.shared.printedOrderIds
-        hasCredentials = Keychain.loadAPIKey() != nil && (SharedStorage.shared.siteId?.isEmpty == false)
-        if hasCredentials {
-            await refresh()
-            startAutoRefresh()
-        }
+        hasCredentials = true
+        await Refresher.shared.notifyWidgets()
     }
 
     /// Starts a Task loop that periodically calls `refresh()` at the user's
@@ -72,15 +73,15 @@ final class AppStore: ObservableObject {
     }
 
     func refresh() async {
+        // SCREENSHOTS-MOCK BRANCH ONLY — refreshing just re-applies the seed
+        // snapshot with a brief spinner so the UI feels alive for screenshots.
         isRefreshing = true
         defer { isRefreshing = false }
-        do {
-            let fresh = try await Refresher.shared.refresh()
-            snapshot = fresh
-            lastError = nil
-        } catch {
-            lastError = error.localizedDescription
-        }
+        try? await Task.sleep(nanoseconds: 600_000_000)
+        snapshot = MockData.snapshot
+        SharedStorage.shared.saveSnapshot(MockData.snapshot)
+        lastError = nil
+        await Refresher.shared.notifyWidgets()
     }
 
     func saveCredentials(apiKey: String?, siteId: String, accountId: String?) {
