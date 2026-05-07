@@ -9,6 +9,7 @@ final class AppStore: ObservableObject {
     @Published var hasCredentials: Bool = false
     @Published var productFilter: ProductFilter = .none
     @Published var printedOrderIds: Set<String> = []
+    @Published var socialAccounts: [SocialAccount] = []
 
     /// Background refresh loop. Cancelled when interval changes or credentials clear.
     private var autoRefreshTask: Task<Void, Never>?
@@ -17,11 +18,40 @@ final class AppStore: ObservableObject {
         snapshot = SharedStorage.shared.loadSnapshot()
         productFilter = SharedStorage.shared.productFilter
         printedOrderIds = SharedStorage.shared.printedOrderIds
+        socialAccounts = SharedStorage.shared.socialAccounts
         hasCredentials = Keychain.loadAPIKey() != nil && (SharedStorage.shared.siteId?.isEmpty == false)
         if hasCredentials {
             await refresh()
             startAutoRefresh()
         }
+    }
+
+    func addSocialAccount(_ account: SocialAccount) {
+        var existing = socialAccounts.filter { $0.id != account.id }
+        existing.append(account)
+        socialAccounts = existing
+        SharedStorage.shared.socialAccounts = existing
+    }
+
+    func removeSocialAccount(_ account: SocialAccount) {
+        socialAccounts.removeAll { $0.id == account.id }
+        SharedStorage.shared.socialAccounts = socialAccounts
+    }
+
+    func setSocialFollowerCountManually(_ account: SocialAccount, count: Int) {
+        guard var updated = socialAccounts.first(where: { $0.id == account.id }) else { return }
+        updated.fetchSource = .manual
+        updated.recordSnapshot(count: count)
+        addSocialAccount(updated)
+    }
+
+    func refreshSocialAccount(_ account: SocialAccount) async -> Bool {
+        guard let count = await SocialFetcher.fetchFollowerCount(for: account) else { return false }
+        var updated = account
+        updated.fetchSource = .auto
+        updated.recordSnapshot(count: count)
+        await MainActor.run { addSocialAccount(updated) }
+        return true
     }
 
     /// Starts a Task loop that periodically calls `refresh()` at the user's

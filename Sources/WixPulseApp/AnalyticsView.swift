@@ -28,6 +28,10 @@ struct AnalyticsView: View {
                 } else {
                     trafficUnavailableCard
                 }
+
+                if !store.socialAccounts.isEmpty {
+                    socialSection
+                }
             }
             .padding(WP.Spacing.xl)
         }
@@ -211,5 +215,81 @@ struct AnalyticsView: View {
         let pct = Int(((Double(today) - avg) / avg) * 100)
         if pct == 0 { return "on pace" }
         return pct > 0 ? "▲ \(pct)% vs avg" : "▼ \(abs(pct))% vs avg"
+    }
+
+    @ViewBuilder
+    private var socialSection: some View {
+        VStack(alignment: .leading, spacing: WP.Spacing.md) {
+            WPSectionHeader(icon: "person.crop.circle.badge.checkmark", title: "Social presence")
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: WP.Spacing.md)], spacing: WP.Spacing.md) {
+                ForEach(store.socialAccounts) { account in
+                    socialCard(account)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func socialCard(_ account: SocialAccount) -> some View {
+        VStack(alignment: .leading, spacing: WP.Spacing.sm) {
+            HStack(spacing: 8) {
+                Image(systemName: account.platform.icon)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.wpAccent)
+                    .font(.system(size: 16, weight: .semibold))
+                if let url = account.platform.profileURL(account.handle) {
+                    Link("@\(account.handle)", destination: url)
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.primary)
+                } else {
+                    Text("@\(account.handle)").font(.callout.weight(.semibold))
+                }
+                Spacer()
+                Text(account.platform.displayName.uppercased())
+                    .font(.system(size: 8, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundStyle(.tertiary)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(account.followerCount)")
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.wpAccent)
+                Text("followers")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if let weekly = account.weekOverWeekChange, weekly != 0 {
+                    Text(weekly > 0 ? "▲ \(weekly) this week" : "▼ \(abs(weekly)) this week")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(weekly > 0 ? Color.wpPositive : Color.wpDanger)
+                }
+            }
+            if account.history.count > 1 {
+                Chart(account.history) { snap in
+                    AreaMark(x: .value("Day", snap.date, unit: .day),
+                             y: .value("Followers", snap.count))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(LinearGradient(colors: [Color.wpAccent.opacity(0.4), Color.wpAccent.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                    LineMark(x: .value("Day", snap.date, unit: .day),
+                             y: .value("Followers", snap.count))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(Color.wpAccent)
+                        .lineStyle(.init(lineWidth: 2))
+                }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .frame(height: 60)
+            }
+            HStack(spacing: 6) {
+                Text("Updated")
+                    .font(.caption2).foregroundStyle(.tertiary)
+                Text(account.lastUpdated, style: .relative)
+                    .font(.caption2).foregroundStyle(.tertiary)
+                Text("ago")
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+        .wpCard()
     }
 }
